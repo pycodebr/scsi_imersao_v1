@@ -17,8 +17,10 @@ from .forms import (
     PolicySearchForm,
     ProposalForm,
     ProposalSearchForm,
+    RenewalForm,
+    RenewalSearchForm,
 )
-from .models import Endorsement, Policy, Proposal
+from .models import Endorsement, Policy, Proposal, Renewal
 from .services import generate_policy_from_proposal
 
 
@@ -322,3 +324,71 @@ class EndorsementDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
     model = Endorsement
     template_name = 'insurance/endorsement_detail.html'
     context_object_name = 'endorsement'
+
+
+class RenewalListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
+    allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
+    model = Renewal
+    template_name = 'insurance/renewal_list.html'
+    context_object_name = 'renewals'
+    paginate_by = 20
+
+    def get_queryset(self):
+        qs = super().get_queryset().select_related('policy', 'new_policy')
+        params = self.request.GET
+        if params.get('status'):
+            qs = qs.filter(status=params['status'])
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['search_form'] = RenewalSearchForm(self.request.GET or None)
+        return ctx
+
+
+class RenewalCreateView(RoleRequiredMixin, TenantQuerysetMixin, CreateView):
+    allowed_roles = ('owner', 'manager', 'broker')
+    model = Renewal
+    form_class = RenewalForm
+    template_name = 'insurance/renewal_form.html'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['tenant'] = self.request.tenant
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.brokerage = self.request.tenant
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('insurance:renewal_detail', kwargs={'pk': self.object.pk})
+
+    def get_initial(self):
+        initial = super().get_initial()
+        policy_id = self.request.GET.get('policy_id')
+        if policy_id:
+            initial['policy'] = policy_id
+        return initial
+
+
+class RenewalUpdateView(RoleRequiredMixin, TenantQuerysetMixin, UpdateView):
+    allowed_roles = ('owner', 'manager', 'broker')
+    model = Renewal
+    form_class = RenewalForm
+    template_name = 'insurance/renewal_form.html'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['tenant'] = self.request.tenant
+        return kwargs
+
+    def get_success_url(self):
+        return reverse_lazy('insurance:renewal_detail', kwargs={'pk': self.object.pk})
+
+
+class RenewalDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
+    allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
+    model = Renewal
+    template_name = 'insurance/renewal_detail.html'
+    context_object_name = 'renewal'

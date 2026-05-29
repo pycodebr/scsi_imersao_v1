@@ -370,3 +370,47 @@ class Endorsement(TenantAwareModel):
     def get_absolute_url(self):
         from django.urls import reverse
         return reverse('insurance:endorsement_detail', kwargs={'pk': self.pk})
+
+
+class Renewal(TenantAwareModel):
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pendente'
+        IN_PROGRESS = 'in_progress', 'Em Andamento'
+        RENEWED = 'renewed', 'Renovada'
+        LOST = 'lost', 'Perdida'
+        NOT_RENEWED = 'not_renewed', 'Não Renovada'
+
+    policy = models.ForeignKey(
+        Policy,
+        on_delete=models.CASCADE,
+        related_name='renewals',
+        verbose_name='apólice original',
+    )
+    new_policy = models.ForeignKey(
+        Policy,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='renewed_from',
+        verbose_name='nova apólice',
+    )
+    status = models.CharField(
+        'status',
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    due_date = models.DateField('data de vencimento')
+    notes = models.TextField('observações', blank=True)
+
+    class Meta:
+        ordering = ('-created_at',)
+        verbose_name = 'renovação'
+        verbose_name_plural = 'renovações'
+
+    def __str__(self):
+        return f'{self.policy.policy_number} — {self.get_status_display()}'
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('insurance:renewal_detail', kwargs={'pk': self.pk})

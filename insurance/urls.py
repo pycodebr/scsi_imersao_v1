@@ -15,6 +15,10 @@ from .views import (
     ProposalDetailView,
     ProposalListView,
     ProposalUpdateView,
+    RenewalCreateView,
+    RenewalDetailView,
+    RenewalListView,
+    RenewalUpdateView,
 )
 
 app_name = 'insurance'
@@ -34,4 +38,8 @@ urlpatterns = [
     path('endossos/create/', EndorsementCreateView.as_view(), name='endorsement_create'),
     path('endossos/<int:pk>/', EndorsementDetailView.as_view(), name='endorsement_detail'),
     path('endossos/<int:pk>/edit/', EndorsementUpdateView.as_view(), name='endorsement_update'),
+    path('renovacoes/', RenewalListView.as_view(), name='renewal_list'),
+    path('renovacoes/create/', RenewalCreateView.as_view(), name='renewal_create'),
+    path('renovacoes/<int:pk>/', RenewalDetailView.as_view(), name='renewal_detail'),
+    path('renovacoes/<int:pk>/edit/', RenewalUpdateView.as_view(), name='renewal_update'),
 ]

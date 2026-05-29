@@ -3097,11 +3097,11 @@ flowchart LR
 
 ### Sprint 20 — Renovações
 **Objetivo:** ciclo de renovação automatizado.
-- [ ] Model `Renewal` + CRUD/lista com filtros
-- [ ] Task Beat `check_renewals_due` (cria/atualiza renovações por vencimento)
-- [ ] Task Beat `expire_policies`
-- [ ] Notificação de renovações próximas
-- [ ] Renovar gera nova apólice e atualiza status
+- [x] Model `Renewal` + CRUD/lista com filtros
+- [x] Task Beat `check_renewals_due` (cria/atualiza renovações por vencimento)
+- [x] Task Beat `expire_policies`
+- [x] Notificação de renovações próximas
+- [x] Renovar gera nova apólice e atualiza status
 
 **Entrega:** renovações detectadas, notificadas e processáveis.
 

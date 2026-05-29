@@ -5,7 +5,7 @@ from clients.models import Client
 from insurers.models import Insurer, LineOfBusiness
 from partners.models import Agent, Producer
 
-from .models import CoveredItem, Endorsement, Policy, Proposal
+from .models import CoveredItem, Endorsement, Policy, Proposal, Renewal
 
 
 class ProposalForm(forms.ModelForm):
@@ -172,5 +172,38 @@ class EndorsementSearchForm(forms.Form):
         label='Status',
         required=False,
         choices=[('', 'Todos')] + Endorsement.Status.choices,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+    )
+
+
+class RenewalForm(forms.ModelForm):
+    class Meta:
+        model = Renewal
+        fields = ('policy', 'new_policy', 'status', 'due_date', 'notes')
+        widgets = {
+            'policy': forms.Select(attrs={'class': 'form-control'}),
+            'new_policy': forms.Select(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'due_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.tenant = kwargs.pop('tenant', None)
+        super().__init__(*args, **kwargs)
+        if self.tenant:
+            self.fields['policy'].queryset = Policy.objects.filter(
+                brokerage=self.tenant,
+            ).order_by('-created_at')
+            self.fields['new_policy'].queryset = Policy.objects.filter(
+                brokerage=self.tenant,
+            ).order_by('-created_at')
+
+
+class RenewalSearchForm(forms.Form):
+    status = forms.ChoiceField(
+        label='Status',
+        required=False,
+        choices=[('', 'Todos')] + Renewal.Status.choices,
         widget=forms.Select(attrs={'class': 'form-control'}),
     )
