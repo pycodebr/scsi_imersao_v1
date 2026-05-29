@@ -156,6 +156,17 @@ class Command(BaseCommand):
         )
         counts['Plan'] = 1
 
+        roles = ['owner', 'manager', 'broker', 'agent', 'producer', 'operational']
+        users = {}
+        for role in roles:
+            user = User.objects.create_user(
+                email=f'{role}{index}@demo.com',
+                password='demo1234',
+                role=role,
+                is_active=True,
+            )
+            users[role] = user
+
         brokerage = Brokerage.objects.create(
             legal_name=faker.company(),
             trade_name=f'Seguros Demo {index}',
@@ -168,8 +179,12 @@ class Command(BaseCommand):
             address_state=random.choice(BRAZILIAN_STATES),
             address_zip=faker.postcode(),
             is_active=True,
+            owner=users['owner'],
+            plan=plan,
         )
         counts['Brokerage'] = 1
+
+        User.objects.filter(pk__in=[u.pk for u in users.values()]).update(brokerage=brokerage)
 
         Subscription.objects.create(
             brokerage=brokerage,
@@ -178,18 +193,6 @@ class Command(BaseCommand):
             expires_at=date.today() + timedelta(days=365),
         )
         counts['Subscription'] = 1
-
-        roles = ['owner', 'manager', 'broker', 'agent', 'producer', 'operational']
-        users = {}
-        for role in roles:
-            user = User.objects.create_user(
-                email=f'{role}{index}@demo.com',
-                password='demo1234',
-                role=role,
-                brokerage=brokerage,
-                is_active=True,
-            )
-            users[role] = user
         counts['User'] = len(roles)
 
         insurers = self._create_insurers(faker, brokerage, counts)
