@@ -19,6 +19,7 @@ class CoveredItemAdmin(admin.ModelAdmin):
 
 @admin.register(Policy)
 class PolicyAdmin(admin.ModelAdmin):
-    list_display = ('policy_number', 'client', 'insurer', 'status', 'brokerage')
-    list_filter = ('status', 'brokerage')
-    search_fields = ('policy_number',)
+    list_display = ('policy_number', 'client', 'insurer', 'status', 'brokerage', 'created_at')
+    list_filter = ('status', 'line_of_business', 'brokerage')
+    search_fields = ('policy_number', 'client__name')
+    raw_id_fields = ('client', 'insurer', 'line_of_business', 'proposal')

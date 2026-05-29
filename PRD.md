@@ -3008,14 +3008,24 @@ flowchart LR
 
 ### Sprint 12 — Apólices + Geração a partir de Proposta
 **Objetivo:** apólices e o serviço de geração.
-- [ ] Model `Policy` (+ relação com `Proposal`)
-- [ ] CRUD de apólices com filtros
-- [ ] `insurance/services.py::generate_policy_from_proposal` (transação)
-- [ ] Botão "Gerar apólice" na proposta (copia dados, clona itens, `policy_number` obrigatório)
-- [ ] Marcar proposta como `converted`; bloquear 2ª geração
+- [x] Model `Policy` (+ relação com `Proposal`)
+- [x] CRUD de apólices com filtros
+- [x] `insurance/services.py::generate_policy_from_proposal` (transação)
+- [x] Botão "Gerar apólice" na proposta (copia dados, clona itens, `policy_number` obrigatório)
+- [x] Marcar proposta como `converted`; bloquear 2ª geração
 - [ ] Gerar `Commission` na criação da apólice (placeholder até Sprint 17)
 
 **Entrega:** apólice criada a partir da proposta com um clique.
+
+> **Decisões da execução da Sprint 12:**
+> - **Policy** expandida (§14.9): `proposal` (FK, null), `policy_number`, `client`, `insurer`, `line_of_business`, `status` (4 choices), `net_premium`, `total_premium`, `iof`, `commission_rate`, `start_date`, `end_date`, `payment_info`, `ai_summary` + status. `UniqueConstraint(['brokerage','policy_number'])`.
+> - **`generate_policy_from_proposal`** (em `insurance/services.py`): transação atômica que copia dados da proposta, clona itens cobertos, marca proposta como `converted`. Levanta `ValueError` se proposta já convertida.
+> - **`GeneratePolicyFromProposalView`**: POST na URL `/propostas/<pk>/generate-policy/`. Exige `policy_number`. Redireciona para detail da apólice.
+> - **Botão "Gerar apólice"** no detail da proposta: modal Bootstrap pedindo o número da apólice. Visível apenas quando `proposal.status != 'converted'`.
+> - **CRUDs de Policy**: `PolicyListView`, `PolicyCreateView`, `PolicyUpdateView`, `PolicyDetailView` — mesmos padrões de tenant, filtros, paginação.
+> - **`PolicyForm`** com FK selects filtrados por tenant.
+> - **Commission placeholder**: não implementado nesta sprint (deferido para Sprint 17).
+> - **URLs**: `/apolices/`, `/apolices/create/`, `/apolices/<pk>/`, `/apolices/<pk>/edit/`. Sidebar "Apólices" aponta para URL real.
 
 ### Sprint 13 — Itens Cobertos (refino)
 **Objetivo:** itens dinâmicos por tipo.

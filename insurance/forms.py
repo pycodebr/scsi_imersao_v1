@@ -4,15 +4,10 @@ from django.forms import inlineformset_factory
 from clients.models import Client
 from insurers.models import Insurer, LineOfBusiness
 
-from .models import CoveredItem, Proposal
+from .models import CoveredItem, Policy, Proposal
 
 
 class ProposalForm(forms.ModelForm):
-    """Formulário de criação / edição de proposta.
-
-    FK selects filtram ativos do tenant.
-    """
-
     class Meta:
         model = Proposal
         fields = (
@@ -40,12 +35,49 @@ class ProposalForm(forms.ModelForm):
         self.tenant = kwargs.pop('tenant', None)
         super().__init__(*args, **kwargs)
         if self.tenant:
-            active_clients = Client.objects.filter(brokerage=self.tenant, is_active=True)
-            active_insurers = Insurer.objects.filter(brokerage=self.tenant, is_active=True)
-            active_lobs = LineOfBusiness.objects.filter(brokerage=self.tenant, is_active=True)
-            self.fields['client'].queryset = active_clients
-            self.fields['insurer'].queryset = active_insurers
-            self.fields['line_of_business'].queryset = active_lobs
+            self.fields['client'].queryset = Client.objects.filter(brokerage=self.tenant, is_active=True)
+            self.fields['insurer'].queryset = Insurer.objects.filter(brokerage=self.tenant, is_active=True)
+            self.fields['line_of_business'].queryset = LineOfBusiness.objects.filter(brokerage=self.tenant, is_active=True)
+
+
+class PolicyForm(forms.ModelForm):
+    class Meta:
+        model = Policy
+        fields = (
+            'policy_number', 'client', 'insurer', 'line_of_business',
+            'status', 'net_premium', 'total_premium', 'iof',
+            'commission_rate', 'start_date', 'end_date', 'payment_info',
+        )
+        widgets = {
+            'policy_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'client': forms.Select(attrs={'class': 'form-control'}),
+            'insurer': forms.Select(attrs={'class': 'form-control'}),
+            'line_of_business': forms.Select(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'net_premium': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'total_premium': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'iof': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'commission_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'payment_info': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.tenant = kwargs.pop('tenant', None)
+        super().__init__(*args, **kwargs)
+        if self.tenant:
+            self.fields['client'].queryset = Client.objects.filter(brokerage=self.tenant, is_active=True)
+            self.fields['insurer'].queryset = Insurer.objects.filter(brokerage=self.tenant, is_active=True)
+            self.fields['line_of_business'].queryset = LineOfBusiness.objects.filter(brokerage=self.tenant, is_active=True)
+
+
+class GeneratePolicyForm(forms.Form):
+    policy_number = forms.CharField(
+        label='Número da apólice',
+        max_length=50,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: APOL-2024-001'}),
+    )
 
 
 class CoveredItemForm(forms.ModelForm):
@@ -68,8 +100,14 @@ class ProposalSearchForm(forms.Form):
     }))
     status = forms.ChoiceField(label='Status', required=False, choices=[('', 'Todos')] + Proposal.Status.choices,
                                widget=forms.Select(attrs={'class': 'form-control'}))
-    insurer = forms.IntegerField(label='Seguradora', required=False, widget=forms.HiddenInput)
-    line_of_business = forms.IntegerField(label='Ramo', required=False, widget=forms.HiddenInput)
+
+
+class PolicySearchForm(forms.Form):
+    q = forms.CharField(label='Buscar', required=False, widget=forms.TextInput(attrs={
+        'class': 'form-control', 'placeholder': 'Número, cliente...',
+    }))
+    status = forms.ChoiceField(label='Status', required=False, choices=[('', 'Todos')] + Policy.Status.choices,
+                               widget=forms.Select(attrs={'class': 'form-control'}))
 
 
 CoveredItemInlineFormSet = inlineformset_factory(

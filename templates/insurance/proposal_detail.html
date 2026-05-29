@@ -11,6 +11,9 @@
 
 {% block page_actions %}
 <a href="{% url 'insurance:proposal_update' proposal.pk %}" class="btn btn-outline-primary btn-sm">Editar</a>
+{% if can_generate_policy %}
+<button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#generatePolicyModal">Gerar apólice</button>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -118,4 +121,31 @@
         </div>
     </div>
 </div>
+
+{% if can_generate_policy %}
+<div class="modal fade" id="generatePolicyModal" tabindex="-1" aria-labelledby="generatePolicyLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'insurance:proposal_generate_policy' proposal.pk %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="generatePolicyLabel">Gerar Apólice</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Isso criará uma apólice copiando os dados desta proposta e marcará a proposta como <strong>Convertida</strong>.</p>
+                    <div class="mb-3">
+                        <label for="id_policy_number" class="form-label">Número da apólice *</label>
+                        <input type="text" name="policy_number" id="id_policy_number" class="form-control" placeholder="Ex: APOL-2024-001" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Gerar apólice</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

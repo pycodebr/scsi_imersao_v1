@@ -1,0 +1,79 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Apólices — SCSI{% endblock %}
+{% block page_title %}Apólices{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="/">Início</a></li>
+    <li class="breadcrumb-item active">Apólices</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'insurance:policy_create' %}" class="btn btn-primary btn-sm">Nova apólice</a>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-8">
+        <form method="get" class="d-flex gap-2">
+            {{ search_form.q }}
+            <select name="status" class="form-control form-control-sm">
+                <option value="">Todos os status</option>
+                {% for val, label in status_choices %}
+                <option value="{{ val }}" {% if request.GET.status == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-outline-primary btn-sm">Buscar</button>
+        </form>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Número</th>
+                <th>Cliente</th>
+                <th>Seguradora</th>
+                <th>Ramo</th>
+                <th>Prêmio Total</th>
+                <th>Status</th>
+                <th>Criada em</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for policy in policies %}
+            <tr>
+                <td><a href="{% url 'insurance:policy_detail' policy.pk %}">{{ policy.policy_number }}</a></td>
+                <td>{{ policy.client.name }}</td>
+                <td>{{ policy.insurer.name }}</td>
+                <td>{{ policy.line_of_business.name }}</td>
+                <td>R$ {{ policy.total_premium|floatformat:2 }}</td>
+                <td><span class="badge bg-{% if policy.status == 'active' %}success{% elif policy.status == 'canceled' %}danger{% elif policy.status == 'expired' %}warning{% elif policy.status == 'renewed' %}primary{% else %}secondary{% endif %}">{{ policy.get_status_display }}</span></td>
+                <td class="text-muted small">{{ policy.created_at|date:"d/m/Y" }}</td>
+                <td>
+                    <a href="{% url 'insurance:policy_update' policy.pk %}" class="btn btn-outline-primary btn-sm">Editar</a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="8" class="text-center text-muted">Nenhuma apólice cadastrada.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if is_paginated %}
+<nav aria-label="Paginação">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}">Anterior</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&status={{ request.GET.status }}">Próximo</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

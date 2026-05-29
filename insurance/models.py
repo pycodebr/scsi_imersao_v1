@@ -103,7 +103,6 @@ class Proposal(TenantAwareModel):
 class CoveredItem(TenantAwareModel):
     """Item coberto — vinculado a uma Proposal OU uma Policy (nunca ambos).
 
-    Na Sprint 11, apenas Proposal. Sprint 12 adiciona Policy.
     Sprint 13 adiciona CheckConstraint e forms dinâmicos.
     """
 
@@ -160,9 +159,9 @@ class CoveredItem(TenantAwareModel):
 
 
 class Policy(TenantAwareModel):
-    """Apólice — placeholder mínimo para permitir a FK em CoveredItem.
+    """Apólice de seguro — tenant-aware.
 
-    Sprint 12 expande este model com todos os campos e o serviço de geração.
+    Pode ser gerada a partir de uma Proposal via `generate_policy_from_proposal`.
     """
 
     class Status(models.TextChoices):
@@ -171,6 +170,20 @@ class Policy(TenantAwareModel):
         EXPIRED = 'expired', 'Expirada'
         RENEWED = 'renewed', 'Renovada'
 
+    class AiSummaryStatus(models.TextChoices):
+        IDLE = 'idle', 'Idle'
+        PROCESSING = 'processing', 'Processando'
+        DONE = 'done', 'Concluído'
+        ERROR = 'error', 'Erro'
+
+    proposal = models.ForeignKey(
+        Proposal,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='policies',
+        verbose_name='proposta de origem',
+    )
     policy_number = models.CharField('número da apólice', max_length=50)
     client = models.ForeignKey(
         'clients.Client',
@@ -196,6 +209,46 @@ class Policy(TenantAwareModel):
         choices=Status.choices,
         default=Status.ACTIVE,
     )
+    net_premium = models.DecimalField(
+        'prêmio líquido',
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+    )
+    total_premium = models.DecimalField(
+        'prêmio total',
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+    )
+    iof = models.DecimalField(
+        'IOF',
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+    )
+    commission_rate = models.DecimalField(
+        'taxa de comissão (%)',
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)],
+    )
+    start_date = models.DateField('início vigência', null=True, blank=True)
+    end_date = models.DateField('fim vigência', null=True, blank=True)
+    payment_info = models.CharField('informações de pagamento', max_length=300, blank=True)
+
+    ai_summary = models.TextField('resumo IA', blank=True, default='')
+    ai_summary_status = models.CharField(
+        'status resumo IA',
+        max_length=12,
+        choices=AiSummaryStatus.choices,
+        default=AiSummaryStatus.IDLE,
+    )
+    ai_summary_updated_at = models.DateTimeField('resumo IA atualizado em', null=True, blank=True)
 
     class Meta:
         ordering = ('-created_at',)
