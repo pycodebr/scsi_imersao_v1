@@ -498,7 +498,7 @@ graph LR
 ### 9.3 Models Abstratas Base
 
 ```python
-# core/models.py  (apenas referência — implementar na Sprint correspondente)
+# base/models.py  (apenas referência — implementar na Sprint correspondente)
 class BaseModel(models.Model):
     created_at = models.DateTimeField('criado em', auto_now_add=True)
     updated_at = models.DateTimeField('atualizado em', auto_now=True)
@@ -624,7 +624,7 @@ scsi/                              # raiz do repositório
 │   ├── base_auth.html
 │   ├── base_app.html              # layout interno (menu lateral)
 │   └── partials/
-└── scsi/                          # projeto Django (config)
+└── core/                          # projeto Django (config)
     ├── __init__.py                # carrega o app Celery
     ├── settings.py                # ÚNICO settings, lê do .env
     ├── urls.py                    # URL router raiz
@@ -634,7 +634,7 @@ scsi/                              # raiz do repositório
 
 # Apps (cada uma em /apps ou na raiz — padrão escolhido: pasta apps/)
 apps/
-├── core/
+├── base/
 ├── accounts/
 ├── tenants/
 ├── clients/
@@ -678,7 +678,7 @@ apps/<app>/
 
 | App | Responsabilidade | Principais models |
 |---|---|---|
-| **core** | `BaseModel`, `TenantAwareModel`, `TenantManager`, `TenantMiddleware`, mixins (`TenantQuerysetMixin`, `RoleRequiredMixin`), context processors, utils, templates base. | (abstratas) |
+| **base** | `BaseModel`, `TenantAwareModel`, `TenantManager`, `TenantMiddleware`, mixins (`TenantQuerysetMixin`, `RoleRequiredMixin`), context processors, utils, templates base. | (abstratas) |
 | **accounts** | `User` customizado (login por email), `EmailBackend`, CBVs de registro/login/logout/perfil, recuperação de senha nativa, gestão de usuários e roles dentro do tenant. | `User` |
 | **tenants** | `Brokerage` (o tenant), `Plan`, `Subscription`, fluxo de signup (cria corretora + owner + assinatura free), `TenantMiddleware`, seeds padrão (ramos, pipeline) via signal. | `Brokerage`, `Plan`, `Subscription` |
 | **clients** | Cadastro e gestão de clientes (PF/PJ), anexos via `documents`, campo `ai_summary`. | `Client` |
@@ -1891,7 +1891,7 @@ flowchart TD
 - **Broker:** RabbitMQ. **Result backend:** Redis (ou DB via `django-celery-results`).
 - **Serviços:** `celery worker` + `celery beat` (agendador, `DatabaseScheduler` via `django-celery-beat`).
 - **Admin:** `dj-celery-panel` para visualizar tasks no Django Admin; resultados via `django-celery-results`.
-- App Celery em `scsi/celery.py`, carregado no `scsi/__init__.py`.
+- App Celery em `core/celery.py`, carregado no `core/__init__.py`.
 
 ### 36.2 Tipos de Tasks
 
@@ -2176,7 +2176,7 @@ services:
 
   celery_worker:
     build: .
-    command: celery -A scsi worker -l info
+    command: celery -A core worker -l info
     volumes:
       - .:/app
       - media_data:/app/media
@@ -2185,7 +2185,7 @@ services:
 
   celery_beat:
     build: .
-    command: celery -A scsi beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    command: celery -A core beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     volumes:
       - .:/app
     env_file: .env
@@ -2280,7 +2280,7 @@ services:
 
   app:
     image: registry.example.com/scsi:latest
-    command: gunicorn scsi.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 3
     env_file: .env
     volumes:
       - media_data:/app/media
@@ -2318,7 +2318,7 @@ services:
 
   celery_worker:
     image: registry.example.com/scsi:latest
-    command: celery -A scsi worker -l info
+    command: celery -A core worker -l info
     env_file: .env
     volumes:
       - media_data:/app/media
@@ -2328,7 +2328,7 @@ services:
 
   celery_beat:
     image: registry.example.com/scsi:latest
-    command: celery -A scsi beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    command: celery -A core beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     env_file: .env
     networks: [internal]
 
@@ -2686,13 +2686,14 @@ flowchart LR
 
 ### Sprint 1 — Setup Inicial
 **Objetivo:** estrutura do projeto, ambiente e configuração base.
-- [ ] Criar `.venv` na raiz (Python 3.13+)
-- [ ] Iniciar projeto Django 6 (`scsi/`) e `requirements.txt`
-- [ ] Criar `.gitignore`, `.env` e `.env.example`
+- [X] Criar `.venv` na raiz (Python 3.13+)
+- [X] Iniciar projeto Django 6 (`core/`) e `requirements.txt`
+- [X] Criar `.gitignore`
+- [X] Criar `.env` e `.env.example`
 - [ ] Configurar **único** `settings.py` lendo do `.env` (decouple/environ)
 - [ ] Definir `AUTH_USER_MODEL='accounts.User'` (antes do 1º migrate)
 - [ ] `TIME_ZONE='America/Sao_Paulo'`, `LANGUAGE_CODE='pt-br'`, `USE_TZ=True`
-- [ ] Criar app `core` com `BaseModel` e `TenantAwareModel` (abstratas) e `TenantManager`
+- [ ] Criar app `base` com `BaseModel` e `TenantAwareModel` (abstratas) e `TenantManager`
 
 **Entrega:** projeto Django roda localmente com settings via `.env`.
 
@@ -2732,7 +2733,7 @@ flowchart LR
 **Objetivo:** infraestrutura de isolamento por tenant.
 - [ ] App `tenants` com model `Brokerage` (campos da seção 14.2)
 - [ ] `TenantMiddleware` (resolve `request.tenant = user.brokerage`)
-- [ ] `TenantQuerysetMixin` e `RoleRequiredMixin` em `core`
+- [ ] `TenantQuerysetMixin` e `RoleRequiredMixin` em `base`
 - [ ] `TenantManager.for_tenant()` + contextvar `current_tenant`
 - [ ] Vincular `User.brokerage`
 
