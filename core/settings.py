@@ -53,6 +53,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     'base',
+    'tenants',
     'accounts',
 ]
 
@@ -65,6 +66,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'tenants.middleware.TenantMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]

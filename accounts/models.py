@@ -36,12 +36,19 @@ class UserManager(BaseUserManager):
 class User(AbstractUser, BaseModel):
     """Usuário do sistema, autenticado por e-mail (sem username).
 
-    O vínculo com a corretora (``brokerage``) e o campo ``role`` são adicionados
-    nas Sprints 5 e 7, respectivamente.
+    O campo ``role`` é adicionado na Sprint 7.
     """
 
     username = None
     email = models.EmailField('e-mail', unique=True)
+    brokerage = models.ForeignKey(
+        'tenants.Brokerage',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='members',
+        verbose_name='corretora',
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

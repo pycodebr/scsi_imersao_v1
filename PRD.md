@@ -2872,13 +2872,23 @@ flowchart LR
 
 ### Sprint 5 — Multi Tenant (núcleo)
 **Objetivo:** infraestrutura de isolamento por tenant.
-- [ ] App `tenants` com model `Brokerage` (campos da seção 14.2)
-- [ ] `TenantMiddleware` (resolve `request.tenant = user.brokerage`)
-- [ ] `TenantQuerysetMixin` e `RoleRequiredMixin` em `base`
-- [ ] `TenantManager.for_tenant()` + contextvar `current_tenant`
-- [ ] Vincular `User.brokerage`
+- [x] App `tenants` com model `Brokerage` (campos da seção 14.2)
+- [x] `TenantMiddleware` (resolve `request.tenant = user.brokerage`)
+- [x] `TenantQuerysetMixin` e `RoleRequiredMixin` em `base`
+- [x] `TenantManager.for_tenant()` + contextvar `current_tenant`
+- [x] Vincular `User.brokerage`
 
 **Entrega:** `request.tenant` disponível; mixins prontos para filtrar por tenant.
+
+> **Decisões da execução da Sprint 5 (resolvendo ambiguidades):**
+> - **`Brokerage` herda `BaseModel`** (timestamps), não `TenantAwareModel` — a própria corretora é o tenant, então não referencia a si mesma. Campos de endereço opcionais na V1 (§14.2 confirma blanks). `owner` é `FK(User, PROTECT)` — o dono é imutável pós-criação. `plan` é `FK(Plan, PROTECT)` — não se deleta plano com corretoras.
+> - **`Plan` incluído nesta Sprint** (junto com Brokerage) pois `Brokerage.plan` requer `Plan` para existir. É catálogo global, sem FK para corretora (sem `brokerage` field). Na V1, `Plan` com `slug='free'` e `is_available=True`; demais planos `is_available=False` ("Em breve"). O fluxo de seed é da Sprint 6.
+> - **`User.brokerage`** é `FK(Brokerage, SET_NULL, null=True, blank=True)` — nulo transitoriamente no signup, até o onboarding criar a corretora (Sprint 6). `related_name='members'` (não `user_set`).
+> - **`TenantMiddleware`** posicionado logo após `AuthenticationMiddleware` no `MIDDLEWARE`. Define `request.tenant = user.brokerage` e seta a contextvar `current_tenant`. Não redireciona nem bloqueia — essa lógica fica nos mixins/views. Zera `current_tenant` no `finally` para não vazar entre requests.
+> - **`TenantQuerysetMixin`** em `base/mixins.py`: `get_queryset()` filtra pelo tenant. Se `request.tenant` é `None`, retorna `.none()` — sem dados visíveis sem corretora.
+> - **`RoleRequiredMixin`** em `base/mixins.py`: valida que o usuário autenticado tem `brokerage`. O check de `role` fica comentado, a ser ativado na Sprint 7 quando o campo `role` for adicionado ao `User`.
+> - **`TenantManager.for_tenant()`** e `current_tenant` contextvar já existiam em `base/managers.py` (criados na Sprint 1). Nada foi alterado, apenas consumidos pelo middleware.
+> - **`tenants` app** registrado em `INSTALLED_APPS` antes de `accounts` (ordem: `base`, `tenants`, `accounts`) por causa da FK circular entre `User ↔ Brokerage`.
 
 ### Sprint 6 — Corretoras e Onboarding
 **Objetivo:** cadastro do tenant e planos.
