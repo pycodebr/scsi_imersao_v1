@@ -2798,12 +2798,19 @@ flowchart LR
 - [X] Iniciar projeto Django 6 (`core/`) e `requirements.txt`
 - [X] Criar `.gitignore`
 - [X] Criar `.env` e `.env.example`
-- [ ] Configurar **único** `settings.py` lendo do `.env` (decouple/environ)
-- [ ] Definir `AUTH_USER_MODEL='accounts.User'` (antes do 1º migrate)
-- [ ] `TIME_ZONE='America/Sao_Paulo'`, `LANGUAGE_CODE='pt-br'`, `USE_TZ=True`
-- [ ] Criar app `base` com `BaseModel` e `TenantAwareModel` (abstratas) e `TenantManager`
+- [X] Configurar **único** `settings.py` lendo do `.env` (decouple/environ)
+- [X] Definir `AUTH_USER_MODEL='accounts.User'` (antes do 1º migrate)
+- [X] `TIME_ZONE='America/Sao_Paulo'`, `LANGUAGE_CODE='pt-br'`, `USE_TZ=True`
+- [X] Criar app `base` com `BaseModel` e `TenantAwareModel` (abstratas) e `TenantManager`
 
 **Entrega:** projeto Django roda localmente com settings via `.env`.
+
+> **Decisões da execução da Sprint 1 (resolvendo ambiguidades):**
+> - **Lib de ambiente:** adotado `django-environ` (em vez de `python-decouple`) por parsear `DATABASE_URL` nativamente (`env.db()`), alinhado à seção 42.
+> - **Banco em dev local:** `settings.DATABASES` lê `DATABASE_URL`; sem ele (dev local pré-Docker) cai em SQLite padrão. O Postgres entra via Docker na Sprint 2.
+> - **`accounts.User` mínimo:** criada a app `accounts` com `User(AbstractUser)` apenas para fixar `AUTH_USER_MODEL` antes do 1º migrate. Login por e-mail (`USERNAME_FIELD='email'`) e `EmailBackend` ficam para a Sprint 4.
+> - **`TenantManager`/`current_tenant`:** `TenantManager.for_tenant()` e o contextvar `current_tenant` já criados em `base/managers.py`; o `TenantMiddleware`/mixins que os consomem entram na Sprint 5.
+> - **`.env`/`.env.example`:** os arquivos (marcados acima como já feitos) não existiam no repo e foram criados nesta execução — `.env.example` documenta todas as chaves da seção 42; `.env` traz valores de dev local.
 
 ### Sprint 2 — Docker Local
 **Objetivo:** ambiente de desenvolvimento containerizado.
