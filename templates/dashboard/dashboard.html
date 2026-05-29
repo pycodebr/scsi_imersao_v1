@@ -1,0 +1,157 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Dashboard — SCSI{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item active">Dashboard</li>
+{% endblock %}
+
+{% block page_actions %}
+<form method="get" class="d-flex gap-2 align-items-center">
+    <select name="period" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+        <option value="7" {% if period_start == period_end|date:"Y-m-d"|default:"" %}{% endif %}>Últimos 7 dias</option>
+        <option value="30" {% if request.GET.period == '30' or not request.GET.period %}selected{% endif %}>Últimos 30 dias</option>
+        <option value="90" {% if request.GET.period == '90' %}selected{% endif %}>Últimos 90 dias</option>
+        <option value="365" {% if request.GET.period == '365' %}selected{% endif %}>Últimos 12 meses</option>
+    </select>
+</form>
+{% endblock %}
+
+{% block content %}
+{# KPI Cards #}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Clientes</small>
+            <h4 class="mb-0 mt-1">{{ total_clients }}</h4>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Apólices ativas</small>
+            <h4 class="mb-0 mt-1 text-success">{{ active_policies }}</h4>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Propostas abertas</small>
+            <h4 class="mb-0 mt-1 text-info">{{ open_proposals }}</h4>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Sinistros abertos</small>
+            <h4 class="mb-0 mt-1 text-warning">{{ open_claims }}</h4>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Renovações 30d</small>
+            <h4 class="mb-0 mt-1 text-primary">{{ renewals_due_30d }}</h4>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <small class="text-muted">Comissão a receber</small>
+            <h5 class="mb-0 mt-1">R$ {{ total_commission_pending|floatformat:0 }}</h5>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    {# Funil de Negociações #}
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h6 class="border-bottom pb-2 mb-3"><i class="feather-filter me-1"></i> Funil de Negociações</h6>
+                {% for stage in funnel_data %}
+                <div class="d-flex align-items-center mb-2">
+                    <span class="badge me-2" style="background-color: {{ stage.color }}; min-width: 100px; color: #fff; font-size: 0.75rem;">{{ stage.name }}</span>
+                    <div class="progress flex-grow-1" style="height: 20px;">
+                        <div class="progress-bar" style="width: {{ stage.pct }}%; background-color: {{ stage.color }};">{{ stage.count }}</div>
+                    </div>
+                    <small class="ms-2 text-muted">R$ {{ stage.value|floatformat:0 }}</small>
+                </div>
+                {% empty %}
+                <p class="text-muted">Nenhuma pipeline configurada.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {# Apólices por Ramo #}
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h6 class="border-bottom pb-2 mb-3"><i class="feather-pie-chart me-1"></i> Apólices por Ramo</h6>
+                {% for item in policies_by_lob %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>{{ item.line_of_business__name|default:"Sem ramo" }}</span>
+                    <span><strong>{{ item.count }}</strong> <small class="text-muted">(R$ {{ item.total_premium|floatformat:0 }})</small></span>
+                </div>
+                {% empty %}
+                <p class="text-muted">Nenhuma apólice ativa.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    {# Sinistros por Status #}
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h6 class="border-bottom pb-2 mb-3"><i class="feather-alert-triangle me-1"></i> Sinistros por Status</h6>
+                {% for item in claims_by_status %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge bg-{% if item.status == 'opened' %}danger{% elif item.status == 'under_analysis' %}warning{% elif item.status == 'approved' %}success{% elif item.status == 'paid' %}info{% elif item.status == 'closed' %}secondary{% else %}dark{% endif %}">{{ item.status }}</span>
+                    <span>{{ item.count }} <small class="text-muted">(R$ {{ item.total|floatformat:0 }})</small></span>
+                </div>
+                {% empty %}
+                <p class="text-muted">Nenhum sinistro.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {# Top Seguradoras #}
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h6 class="border-bottom pb-2 mb-3"><i class="feather-award me-1"></i> Top Seguradoras</h6>
+                {% for item in top_insurers %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span>{{ item.insurer__name }}</span>
+                    <span>{{ item.count }} apólices <small class="text-muted">(R$ {{ item.total_premium|floatformat:0 }})</small></span>
+                </div>
+                {% empty %}
+                <p class="text-muted">Nenhuma seguradora.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Insights #}
+{% if renewals_due_30d > 0 or open_claims > 0 %}
+<div class="row g-3">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h6 class="border-bottom pb-2 mb-3"><i class="feather-lightbulb me-1"></i> Insights</h6>
+                <ul class="list-unstyled mb-0">
+                    {% if renewals_due_30d > 0 %}
+                    <li class="mb-2"><i class="feather-clock text-warning me-1"></i> <strong>{{ renewals_due_30d }}</strong> renovações vencem nos próximos 30 dias.</li>
+                    {% endif %}
+                    {% if open_claims > 0 %}
+                    <li class="mb-2"><i class="feather-alert-triangle text-danger me-1"></i> <strong>{{ open_claims }}</strong> sinistros em aberto aguardando análise.</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -3107,53 +3107,53 @@ flowchart LR
 
 ### Sprint 21 — IA para Resumos
 **Objetivo:** resumos assíncronos por IA.
-- [ ] App `ai_agents`: `tools.py` com `build_tenant_tools(brokerage)`
-- [ ] Summary Agent (LangGraph `StateGraph`): load → fetch → prompt → generate → persist
-- [ ] Tasks `generate_*_summary` para cliente/apólice/sinistro/proposta/negociação
-- [ ] Campos `ai_summary`/`ai_summary_status` e fluxo de UI (loading + aviso)
-- [ ] Notificação ao concluir + exibição do resumo na entidade
-- [ ] Fixar versões: `langchain>=1.0`, `langgraph>=1.0`, `openai>=2.0`
+- [x] App `ai_agents`: `tools.py` com `build_tenant_tools(brokerage)`
+- [x] Summary Agent (LangGraph `StateGraph`): load → fetch → prompt → generate → persist
+- [x] Tasks `generate_*_summary` para cliente/apólice/sinistro/proposta/negociação
+- [x] Campos `ai_summary`/`ai_summary_status` e fluxo de UI (loading + aviso)
+- [x] Notificação ao concluir + exibição do resumo na entidade
+- [x] Fixar versões: `langchain>=1.0`, `langgraph>=1.0`, `openai>=2.0`
 
 **Entrega:** "Resumir com IA" funcionando para todas as entidades.
 
 ### Sprint 22 — Chat com IA
 **Objetivo:** chat com streaming e tools de tenant.
-- [ ] Models `ChatSession` e `ChatMessage` (por usuário, tenant-aware)
-- [ ] Tela de chat (menu lateral) com sidebar de sessões (criar/renomear/excluir)
-- [ ] Chat Agent (tool-calling) com `build_tenant_tools`
-- [ ] Streaming via `StreamingHttpResponse` (SSE) + `EventSource`
-- [ ] Renderização de Markdown → HTML (com sanitização)
-- [ ] Persistência do histórico por sessão
+- [x] Models `ChatSession` e `ChatMessage` (por usuário, tenant-aware)
+- [x] Tela de chat (menu lateral) com sidebar de sessões (criar/renomear/excluir)
+- [x] Chat Agent (tool-calling) com `build_tenant_tools`
+- [x] Streaming via `StreamingHttpResponse` (SSE) + `EventSource`
+- [x] Renderização de Markdown → HTML (com sanitização)
+- [x] Persistência do histórico por sessão
 
 **Entrega:** chat responde sobre a carteira do tenant com streaming.
 
 ### Sprint 23 — Dashboard
 **Objetivo:** visão analítica.
-- [ ] App `dashboard`: agregações por tenant
-- [ ] Cards de KPIs (clientes, apólices, propostas, sinistros, renovações, comissões)
-- [ ] **Gráfico de funil** de negociações (níveis = etapas)
-- [ ] Gráficos: apólices por ramo, prêmio/comissão por mês, sinistros por status, top seguradoras
-- [ ] Filtro de período afetando todos os gráficos
-- [ ] Bloco de insights
+- [x] App `dashboard`: agregações por tenant
+- [x] Cards de KPIs (clientes, apólices, propostas, sinistros, renovações, comissões)
+- [x] **Gráfico de funil** de negociações (níveis = etapas)
+- [x] Gráficos: apólices por ramo, prêmio/comissão por mês, sinistros por status, top seguradoras
+- [x] Filtro de período afetando todos os gráficos
+- [x] Bloco de insights
 
 **Entrega:** dashboard completo com funil e gráficos.
 
 ### Sprint 24 — Relatórios (PDF/CSV)
 **Objetivo:** exportações.
-- [ ] App `reports`: telas e menu de relatórios
-- [ ] Geração PDF com ReportLab/PyPDF (cabeçalho da corretora)
-- [ ] Exportação CSV
-- [ ] Relatórios: carteira, propostas, apólices, sinistros, renovações, comissões, seguradoras, produtividade
-- [ ] PDFs pesados via Celery + notificação ao concluir
+- [x] App `reports`: telas e menu de relatórios
+- [x] Geração PDF com ReportLab/PyPDF (cabeçalho da corretora)
+- [x] Exportação CSV
+- [x] Relatórios: carteira, propostas, apólices, sinistros, renovações, comissões, seguradoras, produtividade
+- [x] PDFs pesados via Celery + notificação ao concluir
 
 **Entrega:** relatórios exportáveis em PDF e CSV.
 
 ### Sprint 25 — Landing Page
 **Objetivo:** aquisição.
-- [ ] Landing pública na raiz (`/`), responsiva, com DS
-- [ ] Seção de planos (Free ativo; pagos "Em breve")
-- [ ] CTAs para cadastro e login
-- [ ] Copy direcionada às personas
+- [x] Landing pública na raiz (`/`), responsiva, com DS
+- [x] Seção de planos (Free ativo; pagos "Em breve")
+- [x] CTAs para cadastro e login
+- [x] Copy direcionada às personas
 
 **Entrega:** landing em `scsi.digital` convertendo em cadastro.
 
@@ -3168,12 +3168,12 @@ flowchart LR
 
 ### Sprint 27 — Deploy com Docker Swarm
 **Objetivo:** produção.
-- [ ] Preparar VPS Ubuntu (update, usuário, firewall, Docker)
-- [ ] `docker swarm init` + rede `traefik-public`
-- [ ] DNS Cloudflare para `scsi.digital`
+- [X] Preparar VPS Ubuntu (update, usuário, firewall, Docker)
+- [X] `docker swarm init` + rede `traefik-public`
+- [X] DNS Cloudflare para `scsi.digital`
 - [ ] `docker-stack.yml` com Traefik + app + db + rabbitmq + redis + worker + beat
-- [ ] Deploy, `migrate`, `collectstatic`, `createsuperuser`
-- [ ] Validar SSL (Let's Encrypt) e streaming SSE atrás do proxy
+- [X] Deploy, `migrate`, `collectstatic`, `createsuperuser`
+- [X] Validar SSL (Let's Encrypt) e streaming SSE atrás do proxy
 
 **Entrega:** sistema em produção com TLS no domínio.
 

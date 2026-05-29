@@ -58,6 +58,8 @@
                 <h6>Descrição</h6>
                 <p>{{ deal.description }}</p>
                 {% endif %}
+
+                {% include "partials/_ai_summary.html" with object=deal entity_type='deal' %}
             </div>
         </div>
 

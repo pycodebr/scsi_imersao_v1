@@ -63,15 +63,7 @@
                     </div>
                 </div>
 
-                {% if client.ai_summary %}
-                <div class="mt-4">
-                    <h6 class="border-bottom pb-2 mb-3">Resumo IA</h6>
-                    <div class="alert alert-info mb-0">{{ client.ai_summary }}</div>
-                    {% if client.ai_summary_updated_at %}
-                    <small class="text-muted">Atualizado em: {{ client.ai_summary_updated_at|date:"d/m/Y H:i" }}</small>
-                    {% endif %}
-                </div>
-                {% endif %}
+                {% include "partials/_ai_summary.html" with object=client entity_type='client' %}
             </div>
         </div>
 

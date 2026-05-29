@@ -66,6 +66,9 @@ LOCAL_APPS = [
     'commissions',
     'crm',
     'notifications',
+    'ai_agents',
+    'dashboard',
+    'reports',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -207,3 +210,8 @@ CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = True
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+
+# OpenAI / LangChain
+OPENAI_API_KEY = env('OPENAI_API_KEY', default='')
+OPENAI_MODEL = env('OPENAI_MODEL', default='gpt-4o-mini')

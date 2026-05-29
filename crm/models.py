@@ -3,6 +3,13 @@ from django.conf import settings
 from base.models import TenantAwareModel
 
 
+class AiSummaryStatus(models.TextChoices):
+    IDLE = 'idle', 'Idle'
+    PROCESSING = 'processing', 'Processando'
+    DONE = 'done', 'Concluído'
+    ERROR = 'error', 'Erro'
+
+
 class Pipeline(TenantAwareModel):
     name = models.CharField('nome', max_length=100)
     is_default = models.BooleanField('pipeline padrão', default=False)
@@ -126,9 +133,11 @@ class Deal(TenantAwareModel):
     ai_summary = models.TextField('resumo IA', blank=True, default='')
     ai_summary_status = models.CharField(
         'status resumo IA',
-        max_length=20,
-        default='pending',
+        max_length=12,
+        choices=AiSummaryStatus.choices,
+        default=AiSummaryStatus.IDLE,
     )
+    ai_summary_updated_at = models.DateTimeField('resumo IA atualizado em', null=True, blank=True)
 
     class Meta:
         ordering = ('-created_at',)

@@ -58,6 +58,8 @@
                 <h6>Descrição</h6>
                 <p>{{ claim.description }}</p>
                 {% endif %}
+
+                {% include "partials/_ai_summary.html" with object=claim entity_type='claim' %}
             </div>
         </div>
     </div>

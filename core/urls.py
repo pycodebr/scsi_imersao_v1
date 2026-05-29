@@ -16,18 +16,33 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic import TemplateView
+
+
+class LandingPageView(TemplateView):
+    template_name = 'landing.html'
+
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            from django.shortcuts import redirect
+            return redirect('/dashboard/')
+        return super().get(request, *args, **kwargs)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', LandingPageView.as_view(), name='landing'),
+    path('dashboard/', include('dashboard.urls')),
     path('accounts/', include('accounts.urls')),
     path('tenants/', include('tenants.urls')),
     path('documents/', include('documents.urls')),
-    path('clients/', include('clients.urls')),
-    path('insurers/', include('insurers.urls')),
-    path('', include('insurance.urls')),
+    path('clientes/', include('clients.urls')),
+    path('seguradoras/', include('insurers.urls')),
+    path('insurance/', include('insurance.urls')),
     path('sinistros/', include('claims.urls')),
     path('parceiros/', include('partners.urls')),
     path('comissoes/', include('commissions.urls')),
     path('crm/', include('crm.urls')),
     path('notifications/', include('notifications.urls')),
+    path('ai/', include('ai_agents.urls')),
+    path('relatorios/', include('reports.urls')),
 ]
