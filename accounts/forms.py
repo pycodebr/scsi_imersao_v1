@@ -1,5 +1,10 @@
 from django import forms
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import (
+    AuthenticationForm,
+    PasswordResetForm,
+    SetPasswordForm,
+    UserCreationForm,
+)
 from django.core.exceptions import ValidationError
 
 from .models import User
@@ -30,6 +35,29 @@ class EmailAuthenticationForm(AuthenticationForm):
             attrs={'class': 'form-control', 'autofocus': True, 'autocomplete': 'email'}
         )
         self.fields['password'].widget.attrs.update({'class': 'form-control'})
+
+
+class CustomPasswordResetForm(PasswordResetForm):
+    """Recuperação de senha com e-mail estilizado."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['email'].widget = forms.EmailInput(
+            attrs={'class': 'form-control', 'autofocus': True, 'autocomplete': 'email'}
+        )
+
+
+class CustomSetPasswordForm(SetPasswordForm):
+    """Redefinição de senha com campos estilizados."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['new_password1'].widget.attrs.update({
+            'class': 'form-control', 'autofocus': True, 'autocomplete': 'new-password',
+        })
+        self.fields['new_password2'].widget.attrs.update({
+            'class': 'form-control', 'autocomplete': 'new-password',
+        })
 
 
 class UserProfileForm(forms.ModelForm):

@@ -2931,13 +2931,23 @@ flowchart LR
 
 ### Sprint 8 — Anexos Protegidos
 **Objetivo:** base de documentos protegidos (reutilizada pelos CRUDs).
-- [ ] App `documents` com model `Document` (GenericFK)
-- [ ] `upload_to` segregado por `brokerage_<id>` + uuid
-- [ ] `ProtectedDocumentDownloadView` (auth + tenant + permissão)
-- [ ] Partial de upload/listagem de anexos reutilizável
-- [ ] Garantir ausência de rota pública para `/media/`
+- [x] App `documents` com model `Document` (GenericFK)
+- [x] `upload_to` segregado por `brokerage_<id>` + uuid
+- [x] `ProtectedDocumentDownloadView` (auth + tenant + permissão)
+- [x] Partial de upload/listagem de anexos reutilizável
+- [x] Garantir ausência de rota pública para `/media/`
 
 **Entrega:** anexos protegidos disponíveis para vincular a qualquer entidade.
+
+> **Decisões da execução da Sprint 8 (resolvendo ambiguidades):**
+> - **`Document` herda `TenantAwareModel`** (escopo por corretora) com `GenericForeignKey` via `ContentType + object_id`. Isso permite vincular anexos a Client, Proposal, Policy, Claim etc. sem FK específica.
+> - **`upload_to` segregado:** `brokerage_<id>/<app_label>/<uuid_hex>.<ext>` — UUID evita colisão e enumeração. O caminho nunca é público; servido exclusivamente pela view protegida.
+> - **`MEDIA_URL` alterado de `/media/` para `/protected-media/`** — prefixo interno sem mapeamento em `urls.py`. Arquivos **nunca** são servidos diretamente pelo Django dev server em produção. Em dev, `runserver` serve `/media/` automaticamente; em produção (Docker+Traefik), apenas a view protegida serve o arquivo.
+> - **`ProtectedDocumentDownloadView`** (§16.3): verifica autenticação, pertencimento ao tenant (`brokerage`) e retorna `FileResponse` com `as_attachment=True` + `Content-Disposition`. Anônimos recebem 404. Usuários de outro tenant recebem 404 (nunca 403, para não vazar existência — §15.2).
+> - **`DocumentUploadView`** com `RoleRequiredMixin(allowed_roles=('owner', 'manager', 'broker'))`. Valida tipo MIME (PDF, imagens, Office, texto) e tamanho (10 MB). Responde JSON para AJAX e redirect para POST síncrono.
+> - **Partial reutilizável:** `documents/document_attachments.html` aceita `content_type_id` e `object_id` e renderiza tabela de anexos + formulário de upload. Incluído em qualquer template de CRUD via `{% include %}`.
+> - **`DocumentListView`** filtra por `content_type_id` + `object_id` + `brokerage=request.tenant`, listando apenas anexos da entidade e tenant.
+> - **Nenhuma rota pública para `/media/`**: `urls.py` não mapeia `+ static(settings.MEDIA_URL, ...)`. Em dev, arquivos são servidos apenas via `ProtectedDocumentDownloadView`.
 
 ### Sprint 9 — Clientes
 **Objetivo:** cadastro de clientes.

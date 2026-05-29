@@ -55,6 +55,7 @@ LOCAL_APPS = [
     'base',
     'tenants',
     'accounts',
+    'documents',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -175,8 +176,10 @@ STORAGES = {
 
 
 # Media protegida — nunca servida publicamente (ver seção 16 do PRD).
+# Os arquivos são servidos SOMENTE via ProtectedDocumentDownloadView, que verifica
+# autenticação + tenant + permissão. NÃO adicionar MEDIA_URL/url ao urls.py.
 
-MEDIA_URL = 'media/'
+MEDIA_URL = '/protected-media/'  # Prefixo interno; NÃO mapeado em urls.py.
 MEDIA_ROOT = env('MEDIA_ROOT', default=BASE_DIR / 'media')
 
 
