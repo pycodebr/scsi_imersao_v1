@@ -15,8 +15,8 @@ ENTITY_MODEL_MAP = {
 
 SUMMARY_URL_MAP = {
     'client': '/clientes/{pk}/',
-    'policy': '/apolices/{pk}/',
-    'proposal': '/propostas/{pk}/',
+    'policy': '/insurance/apolices/{pk}/',
+    'proposal': '/insurance/propostas/{pk}/',
     'claim': '/sinistros/{pk}/',
     'deal': '/crm/negociacoes/{pk}/',
 }

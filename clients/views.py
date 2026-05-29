@@ -4,20 +4,19 @@ from django.db.models import Q
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
-from base.mixins import RoleRequiredMixin, TenantQuerysetMixin
+from base.mixins import PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin
 from documents.models import Document
 from .forms import ClientForm, ClientSearchForm
 from .models import Client
 
 
-class ClientListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
-    """Lista clientes da corretora com busca e paginação."""
-
+class ClientListView(PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin, ListView):
     allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
     model = Client
     template_name = 'clients/client_list.html'
     context_object_name = 'clients'
-    paginate_by = 25
+    paginate_by = 10
+    per_page_query_params = ('q', 'person_type')
 
     def get_queryset(self):
         qs = super().get_queryset()

@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView, View
 
-from base.mixins import RoleRequiredMixin, TenantQuerysetMixin
+from base.mixins import PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin
 from documents.models import Document
 from .forms import (
     CoveredItemInlineFormSet,
@@ -24,12 +24,13 @@ from .models import Endorsement, Policy, Proposal, Renewal
 from .services import generate_policy_from_proposal
 
 
-class ProposalListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
+class ProposalListView(PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin, ListView):
     allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
     model = Proposal
     template_name = 'insurance/proposal_list.html'
     context_object_name = 'proposals'
-    paginate_by = 25
+    paginate_by = 10
+    per_page_query_params = ('q', 'status')
 
     def get_queryset(self):
         qs = super().get_queryset().select_related('client', 'insurer', 'line_of_business')
@@ -165,12 +166,13 @@ class GeneratePolicyFromProposalView(RoleRequiredMixin, View):
 
 # ── Apólices ──────────────────────────────────────────────────────────────────
 
-class PolicyListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
+class PolicyListView(PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin, ListView):
     allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
     model = Policy
     template_name = 'insurance/policy_list.html'
     context_object_name = 'policies'
-    paginate_by = 25
+    paginate_by = 10
+    per_page_query_params = ('q', 'status')
 
     def get_queryset(self):
         qs = super().get_queryset().select_related('client', 'insurer', 'line_of_business')
@@ -266,12 +268,13 @@ class PolicyItemsJsonView(TenantQuerysetMixin, View):
         return JsonResponse({'items': data})
 
 
-class EndorsementListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
+class EndorsementListView(PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin, ListView):
     allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
     model = Endorsement
     template_name = 'insurance/endorsement_list.html'
     context_object_name = 'endorsements'
-    paginate_by = 20
+    paginate_by = 10
+    per_page_query_params = ('type', 'status')
 
     def get_queryset(self):
         qs = super().get_queryset().select_related('policy', 'policy__client')
@@ -339,12 +342,13 @@ class EndorsementDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
         return super().get_queryset().select_related('policy', 'policy__client', 'policy__insurer')
 
 
-class RenewalListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
+class RenewalListView(PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin, ListView):
     allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
     model = Renewal
     template_name = 'insurance/renewal_list.html'
     context_object_name = 'renewals'
-    paginate_by = 20
+    paginate_by = 10
+    per_page_query_params = ('status',)
 
     def get_queryset(self):
         qs = super().get_queryset().select_related('policy', 'new_policy')

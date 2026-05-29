@@ -3,9 +3,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DetailView, View
+from django.views.generic import ListView, CreateView, UpdateView, DetailView, TemplateView, View
 
-from base.mixins import RoleRequiredMixin, TenantQuerysetMixin
+from base.mixins import PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin
 from .models import Deal, DealStageHistory, Pipeline, Stage
 from .forms import DealForm, PipelineForm, StageForm
 
@@ -63,12 +63,13 @@ class StageCreateView(RoleRequiredMixin, TenantQuerysetMixin, CreateView):
         return reverse_lazy('crm:pipeline_list')
 
 
-class DealListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
+class DealListView(PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin, ListView):
     allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
     model = Deal
     template_name = 'crm/deal_list.html'
     context_object_name = 'deals'
-    paginate_by = 20
+    paginate_by = 10
+    per_page_query_params = ('status', 'pipeline_id')
 
     def get_queryset(self):
         qs = super().get_queryset().select_related('stage', 'client', 'pipeline')
@@ -131,16 +132,59 @@ class DealDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
         )
 
 
-class DealKanbanView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
+class DealKanbanView(RoleRequiredMixin, TenantQuerysetMixin, TemplateView):
     allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
-    model = Deal
     template_name = 'crm/deal_kanban.html'
-    context_object_name = 'deals'
 
-    def get_queryset(self):
-        return Deal.objects.filter(
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        pipeline_id = self.request.GET.get('pipeline')
+        pipelines = Pipeline.objects.filter(brokerage=self.request.tenant)
+
+        if pipeline_id:
+            pipeline = get_object_or_404(Pipeline, pk=pipeline_id, brokerage=self.request.tenant)
+        else:
+            pipeline = pipelines.filter(is_default=True).first() or pipelines.first()
+
+        if not pipeline:
+            ctx['pipeline'] = None
+            ctx['pipelines'] = pipelines
+            ctx['stages_data'] = []
+            ctx['producers'] = []
+            return ctx
+
+        stages = pipeline.stages.order_by('order')
+        deals_qs = Deal.objects.filter(
             brokerage=self.request.tenant,
-        ).select_related('stage', 'client', 'pipeline')
+            pipeline=pipeline,
+        ).select_related('client', 'producer', 'stage')
+
+        producer_id = self.request.GET.get('producer')
+        if producer_id:
+            deals_qs = deals_qs.filter(producer_id=producer_id)
+        status = self.request.GET.get('status')
+        if status:
+            deals_qs = deals_qs.filter(status=status)
+
+        from django.db.models import Sum
+        stages_data = []
+        for stage in stages:
+            stage_deals = deals_qs.filter(stage=stage).order_by('-updated_at')
+            stage_total = stage_deals.aggregate(total=Sum('estimated_value'))['total'] or 0
+            stages_data.append({
+                'stage': stage,
+                'deals': stage_deals,
+                'count': stage_deals.count(),
+                'total': stage_total,
+            })
+
+        ctx['pipeline'] = pipeline
+        ctx['pipelines'] = pipelines
+        ctx['stages_data'] = stages_data
+
+        from partners.models import Producer
+        ctx['producers'] = Producer.objects.filter(brokerage=self.request.tenant)
+        return ctx
 
 
 class DealMoveStageView(RoleRequiredMixin, View):

@@ -1,4 +1,5 @@
 {% extends 'base_app.html' %}
+{% load brl_tags %}
 
 {% block title %}Meu Plano — SCSI{% endblock %}
 {% block page_title %}Meu Plano{% endblock %}
@@ -67,7 +68,7 @@
                         {% if plan.price == 0 %}
                         <p class="text-muted">Grátis</p>
                         {% else %}
-                        <p class="text-muted">R$ {{ plan.price }}/mês</p>
+                        <p class="text-muted">{{ plan.price|brl }}/mês</p>
                         {% endif %}
                         {% if not plan.is_available %}
                         <span class="badge bg-secondary">Em breve</span>

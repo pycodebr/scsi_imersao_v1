@@ -1,4 +1,5 @@
 {% extends 'base_app.html' %}
+{% load brl_tags %}
 
 {% block title %}{{ proposal.number }} — Propostas — SCSI{% endblock %}
 {% block page_title %}Proposta {{ proposal.number }}{% endblock %}
@@ -46,9 +47,9 @@
                             <tr><th class="text-muted">Cliente</th><td>{{ proposal.client.name }}</td></tr>
                             <tr><th class="text-muted">Seguradora</th><td>{{ proposal.insurer.name }}</td></tr>
                             <tr><th class="text-muted">Ramo</th><td>{{ proposal.line_of_business.name }}</td></tr>
-                            <tr><th class="text-muted">Prêmio líquido</th><td>R$ {{ proposal.net_premium|floatformat:2 }}</td></tr>
-                            <tr><th class="text-muted">Prêmio total</th><td>R$ {{ proposal.total_premium|floatformat:2 }}</td></tr>
-                            <tr><th class="text-muted">IOF</th><td>R$ {{ proposal.iof|floatformat:2 }}</td></tr>
+                            <tr><th class="text-muted">Prêmio líquido</th><td>{{ proposal.net_premium|brl }}</td></tr>
+                            <tr><th class="text-muted">Prêmio total</th><td>{{ proposal.total_premium|brl }}</td></tr>
+                            <tr><th class="text-muted">IOF</th><td>{{ proposal.iof|brl }}</td></tr>
                         </table>
                     </div>
                     <div class="col-md-6">
@@ -92,7 +93,7 @@
                                 <td><span class="badge bg-secondary">{{ item.get_item_type_display }}</span></td>
                                 <td>{{ item.description }}</td>
                                 <td>{{ item.identifier|default:"—" }}</td>
-                                <td>R$ {{ item.insured_amount|floatformat:2 }}</td>
+                                <td>{{ item.insured_amount|brl }}</td>
                                 <td>
                                     {% if item.attributes %}
                                     <small class="text-muted">{% for k, v in item.attributes.items %}{{ k }}: {{ v }}{% if not forloop.last %}, {% endif %}{% endfor %}</small>

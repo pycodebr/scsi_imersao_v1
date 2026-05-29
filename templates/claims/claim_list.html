@@ -1,4 +1,5 @@
 {% extends 'base_app.html' %}
+{% load brl_tags %}
 
 {% block title %}Sinistros — SCSI{% endblock %}
 {% block page_title %}Sinistros{% endblock %}
@@ -59,7 +60,7 @@
                         <td>{{ claim.policy.policy_number|default:"—" }}</td>
                         <td>{{ claim.covered_item.description|default:"—" }}</td>
                         <td>{{ claim.occurrence_date|date:"d/m/Y" }}</td>
-                        <td>R$ {{ claim.claimed_amount|floatformat:2 }}</td>
+                        <td>{{ claim.claimed_amount|brl }}</td>
                         <td><span class="badge {{ claim.status|slugify }}">{{ claim.get_status_display }}</span></td>
                     </tr>
                 {% endfor %}

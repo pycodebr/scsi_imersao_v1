@@ -1,4 +1,5 @@
 {% extends 'base_app.html' %}
+{% load brl_tags %}
 
 {% block title %}Endosso {{ endorsement.endorsement_number }} — SCSI{% endblock %}
 {% block page_title %}Endosso {{ endorsement.endorsement_number }}{% endblock %}
@@ -34,7 +35,7 @@
                     </div>
                     <div class="col-md-3 mb-3">
                         <small class="text-muted d-block">Variação de Prêmio</small>
-                        {% if endorsement.premium_change >= 0 %}+{% endif %}R$ {{ endorsement.premium_change|floatformat:2 }}
+                        {% if endorsement.premium_change >= 0 %}+{% endif %}{{ endorsement.premium_change|brl }}
                     </div>
                     <div class="col-md-3 mb-3">
                         <small class="text-muted d-block">Data de Vigência</small>

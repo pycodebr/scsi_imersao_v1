@@ -1,6 +1,6 @@
+import json
 from django.db.models import Count, Sum, Q, F
 from django.db.models.functions import TruncMonth
-from django.utils import timezone
 from datetime import date, timedelta
 
 from django.views.generic import TemplateView
@@ -17,15 +17,12 @@ class DashboardView(RoleRequiredMixin, TemplateView):
         brokerage = self.request.tenant
         today = date.today()
         period_start = self._get_period_start()
-        period_days = (today - period_start).days or 1
 
         from clients.models import Client
         from insurance.models import Policy, Proposal, Renewal
         from claims.models import Claim
-        from commissions.models import Commission, CommissionSplit
+        from commissions.models import Commission
         from crm.models import Deal, Stage, Pipeline
-        from insurers.models import Insurer
-        from partners.models import Agent, Producer
 
         ctx['total_clients'] = Client.objects.filter(brokerage=brokerage, is_active=True).count()
         ctx['active_policies'] = Policy.objects.filter(brokerage=brokerage, status='active').count()
@@ -43,10 +40,6 @@ class DashboardView(RoleRequiredMixin, TemplateView):
         ).count()
         ctx['renewals_due_30d'] = renewals_due
 
-        ctx['total_commission_received'] = Commission.objects.filter(
-            brokerage=brokerage, status='received'
-        ).aggregate(total=Sum('insurer_amount'))['total'] or 0
-
         ctx['total_commission_pending'] = Commission.objects.filter(
             brokerage=brokerage, status='pending'
         ).aggregate(total=Sum('insurer_amount'))['total'] or 0
@@ -54,14 +47,21 @@ class DashboardView(RoleRequiredMixin, TemplateView):
         pipeline = Pipeline.objects.filter(brokerage=brokerage, is_default=True).first()
         if not pipeline:
             pipeline = Pipeline.objects.filter(brokerage=brokerage).first()
+
+        funnel_labels = []
+        funnel_values = []
+        funnel_amounts = []
+        funnel_colors = []
+
         if pipeline:
             stages = Stage.objects.filter(pipeline=pipeline).order_by('order')
             funnel_data = []
             max_count = 0
             for stage in stages:
-                count = Deal.objects.filter(
-                    brokerage=brokerage, stage=stage
-                ).count()
+                count = Deal.objects.filter(brokerage=brokerage, stage=stage).count()
+                value = Deal.objects.filter(brokerage=brokerage, stage=stage).aggregate(
+                    total=Sum('estimated_value')
+                )['total'] or 0
                 if count > max_count:
                     max_count = count
                 funnel_data.append({
@@ -70,53 +70,91 @@ class DashboardView(RoleRequiredMixin, TemplateView):
                     'is_won': stage.is_won,
                     'is_lost': stage.is_lost,
                     'count': count,
-                    'value': 0,
+                    'value': value,
                     'pct': 0,
                 })
-            for idx, stage in enumerate(stages):
-                value = Deal.objects.filter(
-                    brokerage=brokerage, stage=stage
-                ).aggregate(total=Sum('estimated_value'))['total'] or 0
-                funnel_data[idx]['value'] = value
-                funnel_data[idx]['pct'] = int((funnel_data[idx]['count'] / max_count) * 100) if max_count > 0 else 0
+                funnel_labels.append(stage.name)
+                funnel_values.append(count)
+                funnel_amounts.append(float(value))
+                funnel_colors.append(stage.color)
+
+            for idx, item in enumerate(funnel_data):
+                item['pct'] = int((item['count'] / max_count) * 100) if max_count > 0 else 0
             ctx['funnel_data'] = funnel_data
         else:
             ctx['funnel_data'] = []
 
-        policies_by_lob = Policy.objects.filter(
+        ctx['funnel_labels'] = json.dumps(funnel_labels)
+        ctx['funnel_values'] = json.dumps(funnel_values)
+        ctx['funnel_amounts'] = json.dumps(funnel_amounts)
+        ctx['funnel_colors'] = json.dumps(funnel_colors)
+
+        policies_by_lob = list(Policy.objects.filter(
             brokerage=brokerage, status='active'
         ).values('line_of_business__name').annotate(
             count=Count('id'), total_premium=Sum('total_premium')
-        ).order_by('-count')
-        ctx['policies_by_lob'] = list(policies_by_lob)
+        ).order_by('-count'))
 
-        monthly_premium = Policy.objects.filter(
-            brokerage=brokerage,
-            created_at__date__gte=period_start,
-        ).annotate(month=TruncMonth('created_at')).values('month').annotate(
-            total=Sum('total_premium')
-        ).order_by('month')
-        ctx['monthly_premium'] = list(monthly_premium)
+        ctx['policies_by_lob'] = policies_by_lob
+        ctx['chart_lob_labels'] = json.dumps([item['line_of_business__name'] or 'Sem ramo' for item in policies_by_lob])
+        ctx['chart_lob_values'] = json.dumps([item['count'] for item in policies_by_lob])
 
-        monthly_commission = Commission.objects.filter(
-            brokerage=brokerage,
-            created_at__date__gte=period_start,
-        ).annotate(month=TruncMonth('created_at')).values('month').annotate(
-            total=Sum('insurer_amount')
-        ).order_by('month')
-        ctx['monthly_commission'] = list(monthly_commission)
-
-        claims_by_status = Claim.objects.filter(
+        claims_by_status = list(Claim.objects.filter(
             brokerage=brokerage
-        ).values('status').annotate(count=Count('id'), total=Sum('claimed_amount')).order_by('-count')
-        ctx['claims_by_status'] = list(claims_by_status)
+        ).values('status').annotate(count=Count('id'), total=Sum('claimed_amount')).order_by('-count'))
 
-        top_insurers = Policy.objects.filter(
+        status_display = {
+            'opened': 'Aberto', 'under_analysis': 'Em Análise',
+            'approved': 'Aprovado', 'paid': 'Pago', 'closed': 'Fechado',
+        }
+        ctx['claims_by_status'] = claims_by_status
+        ctx['chart_claims_labels'] = json.dumps([status_display.get(item['status'], item['status']) for item in claims_by_status])
+        ctx['chart_claims_values'] = json.dumps([item['count'] for item in claims_by_status])
+
+        top_insurers = list(Policy.objects.filter(
             brokerage=brokerage, status='active'
         ).values('insurer__name').annotate(
             count=Count('id'), total_premium=Sum('total_premium')
-        ).order_by('-total_premium')[:5]
-        ctx['top_insurers'] = list(top_insurers)
+        ).order_by('-total_premium')[:5])
+
+        ctx['top_insurers'] = top_insurers
+        ctx['chart_insurer_labels'] = json.dumps([item['insurer__name'] or 'N/A' for item in top_insurers])
+        ctx['chart_insurer_values'] = json.dumps([item['count'] for item in top_insurers])
+
+        monthly_premium = list(Policy.objects.filter(
+            brokerage=brokerage, created_at__date__gte=period_start,
+        ).annotate(month=TruncMonth('created_at')).values('month').annotate(
+            total=Sum('total_premium')
+        ).order_by('month'))
+
+        monthly_commission = list(Commission.objects.filter(
+            brokerage=brokerage, created_at__date__gte=period_start,
+        ).annotate(month=TruncMonth('created_at')).values('month').annotate(
+            total=Sum('insurer_amount')
+        ).order_by('month'))
+
+        month_labels = []
+        premium_data = []
+        commission_data = []
+        for entry in monthly_premium:
+            month_labels.append(entry['month'].strftime('%b/%Y') if entry['month'] else '')
+            premium_data.append(float(entry['total'] or 0))
+
+        for entry in monthly_commission:
+            month_labels_commission = entry['month'].strftime('%b/%Y') if entry['month'] else ''
+            commission_data.append(float(entry['total'] or 0))
+
+        all_months = sorted(set(
+            [e['month'].strftime('%b/%Y') for e in monthly_premium if e['month']] +
+            [e['month'].strftime('%b/%Y') for e in monthly_commission if e['month']]
+        ))
+
+        premium_map = {e['month'].strftime('%b/%Y'): float(e['total'] or 0) for e in monthly_premium if e['month']}
+        commission_map = {e['month'].strftime('%b/%Y'): float(e['total'] or 0) for e in monthly_commission if e['month']}
+
+        ctx['chart_months'] = json.dumps(all_months)
+        ctx['chart_premiums'] = json.dumps([premium_map.get(m, 0) for m in all_months])
+        ctx['chart_commissions'] = json.dumps([commission_map.get(m, 0) for m in all_months])
 
         ctx['period_start'] = period_start
         ctx['period_end'] = today

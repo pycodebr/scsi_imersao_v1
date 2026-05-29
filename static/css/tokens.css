@@ -45,3 +45,8 @@
     /* --- Sombra --- */
     --scsi-shadow: 0 0 25px rgba(0, 0, 0, 0.06);
 }
+
+/* --- Table responsive: prevents last-row cutoff in cards --- */
+.card-body.p-0 > .table-responsive {
+    padding-bottom: 0.5rem;
+}

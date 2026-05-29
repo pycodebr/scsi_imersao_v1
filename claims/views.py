@@ -2,16 +2,17 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
 
-from base.mixins import TenantQuerysetMixin
+from base.mixins import PerPageMixin, TenantQuerysetMixin
 from .models import Claim
 from .forms import ClaimForm, ClaimSearchForm
 
 
-class ClaimListView(TenantQuerysetMixin, LoginRequiredMixin, ListView):
+class ClaimListView(PerPageMixin, TenantQuerysetMixin, LoginRequiredMixin, ListView):
     model = Claim
     template_name = 'claims/claim_list.html'
     context_object_name = 'claims'
-    paginate_by = 20
+    paginate_by = 10
+    per_page_query_params = ('status', 'policy_id', 'date_from', 'date_to')
 
     def get_queryset(self):
         qs = super().get_queryset().select_related('policy', 'covered_item')

@@ -1,4 +1,5 @@
 {% extends 'base_app.html' %}
+{% load brl_tags %}
 
 {% block title %}{{ policy.policy_number }} — Apólices — SCSI{% endblock %}
 {% block page_title %}Apólice {{ policy.policy_number }}{% endblock %}
@@ -49,9 +50,9 @@
                     <div class="col-md-6">
                         <h6 class="border-bottom pb-2 mb-3">Valores e vigência</h6>
                         <table class="table table-sm table-borderless">
-                            <tr><th class="text-muted" style="width:40%">Prêmio líquido</th><td>R$ {{ policy.net_premium|floatformat:2 }}</td></tr>
-                            <tr><th class="text-muted">Prêmio total</th><td>R$ {{ policy.total_premium|floatformat:2 }}</td></tr>
-                            <tr><th class="text-muted">IOF</th><td>R$ {{ policy.iof|floatformat:2 }}</td></tr>
+                            <tr><th class="text-muted" style="width:40%">Prêmio líquido</th><td>{{ policy.net_premium|brl }}</td></tr>
+                            <tr><th class="text-muted">Prêmio total</th><td>{{ policy.total_premium|brl }}</td></tr>
+                            <tr><th class="text-muted">IOF</th><td>{{ policy.iof|brl }}</td></tr>
                             <tr><th class="text-muted">Comissão</th><td>{{ policy.commission_rate }}%</td></tr>
                             <tr><th class="text-muted">Início</th><td>{{ policy.start_date|default:"—" }}</td></tr>
                             <tr><th class="text-muted">Fim</th><td>{{ policy.end_date|default:"—" }}</td></tr>
@@ -85,7 +86,7 @@
                                 <td><span class="badge bg-secondary">{{ item.get_item_type_display }}</span></td>
                                 <td>{{ item.description }}</td>
                                 <td>{{ item.identifier|default:"—" }}</td>
-                                <td>R$ {{ item.insured_amount|floatformat:2 }}</td>
+                                <td>{{ item.insured_amount|brl }}</td>
                                 <td>
                                     {% if item.attributes %}
                                     <small class="text-muted">{% for k, v in item.attributes.items %}{{ k }}: {{ v }}{% if not forloop.last %}, {% endif %}{% endfor %}</small>
@@ -140,7 +141,7 @@
                             <tr>
                                 <td><a href="{{ end.get_absolute_url }}">{{ end.endorsement_number }}</a></td>
                                 <td>{{ end.get_type_display }}</td>
-                                <td>{% if end.premium_change >= 0 %}+{% endif %}R$ {{ end.premium_change|floatformat:2 }}</td>
+                                <td>{% if end.premium_change >= 0 %}+{% endif %}{{ end.premium_change|brl }}</td>
                                 <td>{{ end.effective_date|date:"d/m/Y" }}</td>
                                 <td><span class="badge {{ end.status|slugify }}">{{ end.get_status_display }}</span></td>
                             </tr>

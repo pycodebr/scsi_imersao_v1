@@ -1,5 +1,6 @@
 import random
 from datetime import date, timedelta
+from django.utils import timezone
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
@@ -190,7 +191,7 @@ class Command(BaseCommand):
             brokerage=brokerage,
             plan=plan,
             status='active',
-            expires_at=date.today() + timedelta(days=365),
+            expires_at=timezone.now() + timedelta(days=365),
         )
         counts['Subscription'] = 1
         counts['User'] = len(roles)
@@ -218,17 +219,20 @@ class Command(BaseCommand):
     def _create_insurers(self, faker, brokerage, counts):
         insurers = []
         names = ['Porto Seguro', 'SulAmérica', 'Bradesco Seguros', 'Itaú Seguros', 'HDI Seguros',
-                 'Allianz', 'Liberty Seguros', 'Mapfre Seguros', 'Tokio Marine', 'Zurich Seguros']
+                  'Allianz', 'Liberty Seguros', 'Mapfre Seguros', 'Tokio Marine', 'Zurich Seguros']
         for name in names[:5]:
-            insurers.append(Insurer.objects.create(
+            insurer, _ = Insurer.objects.get_or_create(
                 brokerage=brokerage,
                 name=name,
-                cnpj=faker.cnpj(),
-                susep_code=faker.numerify(text='#####'),
-                email=faker.company_email(),
-                phone=faker.phone_number(),
-                is_active=True,
-            ))
+                defaults=dict(
+                    cnpj=faker.cnpj(),
+                    susep_code=faker.numerify(text='#####'),
+                    email=faker.company_email(),
+                    phone=faker.phone_number(),
+                    is_active=True,
+                ),
+            )
+            insurers.append(insurer)
         counts['Insurer'] = len(insurers)
         return insurers
 
@@ -236,13 +240,16 @@ class Command(BaseCommand):
         lines = []
         cats = list(LOB_CATEGORIES.items())
         for code, name in cats:
-            lines.append(LineOfBusiness.objects.create(
+            line, _ = LineOfBusiness.objects.get_or_create(
                 brokerage=brokerage,
                 name=name,
-                code=code.upper(),
-                category=code,
-                is_active=True,
-            ))
+                defaults=dict(
+                    code=code.upper(),
+                    category=code,
+                    is_active=True,
+                ),
+            )
+            lines.append(line)
         counts['LineOfBusiness'] = len(lines)
         return lines
 
@@ -426,17 +433,19 @@ class Command(BaseCommand):
                 break
             policy = random.choice(policies)
             items = list(CoveredItem.objects.filter(policy=policy, brokerage=brokerage))
+            if not items:
+                continue
             claim = Claim.objects.create(
                 brokerage=brokerage,
                 claim_number=faker.numerify(text='SIN-#####{:04d}'.format(i + 1)),
                 policy=policy,
-                covered_item=random.choice(items) if items else None,
+                covered_item=random.choice(items),
                 occurrence_date=faker.date_between(start_date='-180d', end_date='today'),
                 notice_date=faker.date_between(start_date='-180d', end_date='today'),
                 status=random.choice(statuses),
                 description=faker.text(max_nb_chars=200),
                 claimed_amount=faker.pydecimal(min_value=1000, max_value=100000, right_digits=2),
-                approved_amount=faker.pydecimal(min_value=500, max_value=80000, right_digits=2) if random.random() > 0.3 else None,
+                approved_amount=faker.pydecimal(min_value=500, max_value=80000, right_digits=2) if random.random() > 0.3 else 0,
                 ai_summary=FAKE_SUMMARY if i % 3 == 0 else '',
                 ai_summary_status='done' if i % 3 == 0 else 'idle',
             )

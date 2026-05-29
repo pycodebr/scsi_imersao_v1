@@ -3,19 +3,20 @@ from django.db.models import Q
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView
 
-from base.mixins import RoleRequiredMixin, TenantQuerysetMixin
+from base.mixins import PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin
 from .forms import InsurerForm, LineOfBusinessForm
 from .models import Insurer, LineOfBusiness
 
 
 # ── Seguradoras ──────────────────────────────────────────────────────────────
 
-class InsurerListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
+class InsurerListView(PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin, ListView):
     allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
     model = Insurer
     template_name = 'insurers/insurer_list.html'
     context_object_name = 'insurers'
-    paginate_by = 25
+    paginate_by = 10
+    per_page_query_params = ('q', 'is_active')
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -64,12 +65,13 @@ class InsurerUpdateView(RoleRequiredMixin, UpdateView):
 
 # ── Ramos ────────────────────────────────────────────────────────────────────
 
-class LineOfBusinessListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
+class LineOfBusinessListView(PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin, ListView):
     allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
     model = LineOfBusiness
     template_name = 'insurers/lob_list.html'
     context_object_name = 'lobs'
-    paginate_by = 25
+    paginate_by = 10
+    per_page_query_params = ('q', 'category', 'is_active')
 
     def get_queryset(self):
         qs = super().get_queryset()

@@ -2,17 +2,18 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DetailView
 
-from base.mixins import RoleRequiredMixin, TenantQuerysetMixin
+from base.mixins import PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin
 from .models import Agent, Producer
 from .forms import AgentForm, ProducerForm
 
 
-class AgentListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
+class AgentListView(PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin, ListView):
     allowed_roles = ('owner', 'manager', 'broker', 'operational')
     model = Agent
     template_name = 'partners/agent_list.html'
     context_object_name = 'agents'
-    paginate_by = 20
+    paginate_by = 10
+    per_page_query_params = ('q',)
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -71,12 +72,13 @@ class AgentDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
         return super().get_queryset().select_related('user').prefetch_related('producers')
 
 
-class ProducerListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
+class ProducerListView(PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin, ListView):
     allowed_roles = ('owner', 'manager', 'broker', 'operational')
     model = Producer
     template_name = 'partners/producer_list.html'
     context_object_name = 'producers'
-    paginate_by = 20
+    paginate_by = 10
+    per_page_query_params = ('q',)
 
     def get_queryset(self):
         qs = super().get_queryset().select_related('agent')

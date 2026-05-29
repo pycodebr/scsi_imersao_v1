@@ -1,4 +1,5 @@
 {% extends 'base_app.html' %}
+{% load brl_tags %}
 
 {% block title %}Comissão {{ commission.pk }} — SCSI{% endblock %}
 {% block page_title %}Comissão #{{ commission.pk }}{% endblock %}
@@ -22,7 +23,7 @@
                     </div>
                     <div class="col-md-4 mb-3">
                         <small class="text-muted d-block">Prêmio Base</small>
-                        R$ {{ commission.base_premium|floatformat:2 }}
+                        {{ commission.base_premium|brl }}
                     </div>
                     <div class="col-md-4 mb-3">
                         <small class="text-muted d-block">Taxa da Seguradora</small>
@@ -30,7 +31,7 @@
                     </div>
                     <div class="col-md-4 mb-3">
                         <small class="text-muted d-block">Valor Corretora</small>
-                        R$ {{ commission.insurer_amount|floatformat:2 }}
+                        {{ commission.insurer_amount|brl }}
                     </div>
                     <div class="col-md-4 mb-3">
                         <small class="text-muted d-block">Data Referência</small>
@@ -38,7 +39,7 @@
                     </div>
                     <div class="col-md-4 mb-3">
                         <small class="text-muted d-block">Status</small>
-                        <span class="badge {{ commission.status|slugify }}">{{ commission.get_status_display }}</span>
+                        <span class="badge bg-{% if commission.status == 'pending' %}warning{% elif commission.status == 'received' %}info{% elif commission.status == 'paid' %}success{% else %}secondary{% endif %}">{{ commission.get_status_display }}</span>
                     </div>
                 </div>
             </div>
@@ -63,10 +64,10 @@
                         {% for split in commission.splits.all %}
                             <tr>
                                 <td>{{ split.get_beneficiary_type_display }}</td>
-                                <td>{{ split.agent.name|default:split.producer.name|default:"—" }}</td>
+                                <td>{% if split.agent %}{{ split.agent.name }}{% elif split.producer %}{{ split.producer.name }}{% else %}—{% endif %}</td>
                                 <td>{{ split.rate }}%</td>
-                                <td>R$ {{ split.amount|floatformat:2 }}</td>
-                                <td><span class="badge {{ split.status|slugify }}">{{ split.get_status_display }}</span></td>
+                                <td>{{ split.amount|brl }}</td>
+                                <td><span class="badge bg-{% if split.status == 'pending' %}warning{% elif split.status == 'paid' %}success{% else %}secondary{% endif %}">{{ split.get_status_display }}</span></td>
                             </tr>
                         {% endfor %}
                         </tbody>

@@ -1,4 +1,5 @@
 {% extends 'base_app.html' %}
+{% load brl_tags %}
 
 {% block title %}Sinistro {{ claim.claim_number }} — SCSI{% endblock %}
 {% block page_title %}Sinistro {{ claim.claim_number }}{% endblock %}
@@ -42,11 +43,11 @@
                     </div>
                     <div class="col-md-3 mb-3">
                         <small class="text-muted d-block">Valor Reclamado</small>
-                        R$ {{ claim.claimed_amount|floatformat:2 }}
+                        {{ claim.claimed_amount|brl }}
                     </div>
                     <div class="col-md-3 mb-3">
                         <small class="text-muted d-block">Valor Aprovado</small>
-                        R$ {{ claim.approved_amount|floatformat:2 }}
+                        {{ claim.approved_amount|brl }}
                     </div>
                     <div class="col-md-3 mb-3">
                         <small class="text-muted d-block">Status</small>

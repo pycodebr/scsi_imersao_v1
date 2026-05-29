@@ -1,4 +1,5 @@
 {% extends 'base_app.html' %}
+{% load brl_tags %}
 
 {% block title %}Dashboard — SCSI{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
@@ -10,16 +11,23 @@
 {% block page_actions %}
 <form method="get" class="d-flex gap-2 align-items-center">
     <select name="period" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
-        <option value="7" {% if period_start == period_end|date:"Y-m-d"|default:"" %}{% endif %}>Últimos 7 dias</option>
-        <option value="30" {% if request.GET.period == '30' or not request.GET.period %}selected{% endif %}>Últimos 30 dias</option>
+        <option value="7" {% if request.GET.period == '7' %}selected{% endif %}>Últimos 7 dias</option>
+        <option value="30" {% if not request.GET.period or request.GET.period == '30' %}selected{% endif %}>Últimos 30 dias</option>
         <option value="90" {% if request.GET.period == '90' %}selected{% endif %}>Últimos 90 dias</option>
         <option value="365" {% if request.GET.period == '365' %}selected{% endif %}>Últimos 12 meses</option>
     </select>
 </form>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+.chart-container { position: relative; width: 100%; }
+.chart-sm { height: 220px; }
+.chart-md { height: 280px; }
+</style>
+{% endblock %}
+
 {% block content %}
-{# KPI Cards #}
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-4 col-lg-2">
         <div class="card border-0 shadow-sm text-center p-3">
@@ -53,105 +61,238 @@
     </div>
     <div class="col-6 col-md-4 col-lg-2">
         <div class="card border-0 shadow-sm text-center p-3">
-            <small class="text-muted">Comissão a receber</small>
-            <h5 class="mb-0 mt-1">R$ {{ total_commission_pending|floatformat:0 }}</h5>
+            <small class="text-muted">Comissão pendente</small>
+            <h5 class="mb-0 mt-1">{{ total_commission_pending|brl }}</h5>
         </div>
     </div>
 </div>
 
 <div class="row g-3 mb-4">
-    {# Funil de Negociações #}
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
                 <h6 class="border-bottom pb-2 mb-3"><i class="feather-filter me-1"></i> Funil de Negociações</h6>
-                {% for stage in funnel_data %}
-                <div class="d-flex align-items-center mb-2">
-                    <span class="badge me-2" style="background-color: {{ stage.color }}; min-width: 100px; color: #fff; font-size: 0.75rem;">{{ stage.name }}</span>
-                    <div class="progress flex-grow-1" style="height: 20px;">
-                        <div class="progress-bar" style="width: {{ stage.pct }}%; background-color: {{ stage.color }};">{{ stage.count }}</div>
-                    </div>
-                    <small class="ms-2 text-muted">R$ {{ stage.value|floatformat:0 }}</small>
-                </div>
-                {% empty %}
-                <p class="text-muted">Nenhuma pipeline configurada.</p>
-                {% endfor %}
+                <div id="funnelContainer" style="position:relative;"></div>
+                {% if not funnel_data %}
+                <p class="text-muted mb-0">Nenhuma pipeline configurada.</p>
+                {% endif %}
             </div>
         </div>
     </div>
 
-    {# Apólices por Ramo #}
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
-                <h6 class="border-bottom pb-2 mb-3"><i class="feather-pie-chart me-1"></i> Apólices por Ramo</h6>
-                {% for item in policies_by_lob %}
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span>{{ item.line_of_business__name|default:"Sem ramo" }}</span>
-                    <span><strong>{{ item.count }}</strong> <small class="text-muted">(R$ {{ item.total_premium|floatformat:0 }})</small></span>
+                <h6 class="border-bottom pb-2 mb-3"><i class="feather-bar-chart-2 me-1"></i> Produção Mensal</h6>
+                <div class="chart-container chart-md">
+                    <canvas id="chartProduction"></canvas>
                 </div>
-                {% empty %}
-                <p class="text-muted">Nenhuma apólice ativa.</p>
-                {% endfor %}
             </div>
         </div>
     </div>
 </div>
 
 <div class="row g-3 mb-4">
-    {# Sinistros por Status #}
-    <div class="col-lg-6">
+    <div class="col-lg-4">
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
-                <h6 class="border-bottom pb-2 mb-3"><i class="feather-alert-triangle me-1"></i> Sinistros por Status</h6>
-                {% for item in claims_by_status %}
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="badge bg-{% if item.status == 'opened' %}danger{% elif item.status == 'under_analysis' %}warning{% elif item.status == 'approved' %}success{% elif item.status == 'paid' %}info{% elif item.status == 'closed' %}secondary{% else %}dark{% endif %}">{{ item.status }}</span>
-                    <span>{{ item.count }} <small class="text-muted">(R$ {{ item.total|floatformat:0 }})</small></span>
+                <h6 class="border-bottom pb-2 mb-3"><i class="feather-pie-chart me-1"></i> Apólices por Ramo</h6>
+                <div class="chart-container chart-sm">
+                    <canvas id="chartByLob"></canvas>
                 </div>
-                {% empty %}
-                <p class="text-muted">Nenhum sinistro.</p>
-                {% endfor %}
             </div>
         </div>
     </div>
-
-    {# Top Seguradoras #}
-    <div class="col-lg-6">
+    <div class="col-lg-4">
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
                 <h6 class="border-bottom pb-2 mb-3"><i class="feather-award me-1"></i> Top Seguradoras</h6>
-                {% for item in top_insurers %}
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span>{{ item.insurer__name }}</span>
-                    <span>{{ item.count }} apólices <small class="text-muted">(R$ {{ item.total_premium|floatformat:0 }})</small></span>
+                <div class="chart-container chart-sm">
+                    <canvas id="chartInsurer"></canvas>
                 </div>
-                {% empty %}
-                <p class="text-muted">Nenhuma seguradora.</p>
-                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h6 class="border-bottom pb-2 mb-3"><i class="feather-alert-triangle me-1"></i> Sinistros por Status</h6>
+                <div class="chart-container chart-sm">
+                    <canvas id="chartClaims"></canvas>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-{# Insights #}
-{% if renewals_due_30d > 0 or open_claims > 0 %}
-<div class="row g-3">
-    <div class="col-12">
+<div class="row g-3 mb-4">
+    <div class="col-lg-12">
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
                 <h6 class="border-bottom pb-2 mb-3"><i class="feather-lightbulb me-1"></i> Insights</h6>
                 <ul class="list-unstyled mb-0">
                     {% if renewals_due_30d > 0 %}
-                    <li class="mb-2"><i class="feather-clock text-warning me-1"></i> <strong>{{ renewals_due_30d }}</strong> renovações vencem nos próximos 30 dias.</li>
+                    <li class="mb-2"><i class="feather-clock text-warning me-2"></i> <strong>{{ renewals_due_30d }}</strong> renovações vencem nos próximos 30 dias.</li>
                     {% endif %}
                     {% if open_claims > 0 %}
-                    <li class="mb-2"><i class="feather-alert-triangle text-danger me-1"></i> <strong>{{ open_claims }}</strong> sinistros em aberto aguardando análise.</li>
+                    <li class="mb-2"><i class="feather-alert-triangle text-danger me-2"></i> <strong>{{ open_claims }}</strong> sinistros em aberto aguardando análise.</li>
+                    {% endif %}
+                    {% if total_commission_pending %}
+                    <li class="mb-2"><i class="feather-dollar-sign text-success me-2"></i> <strong>{{ total_commission_pending|brl }}</strong> em comissões pendentes.</li>
+                    {% endif %}
+                    {% if active_policies > 0 %}
+                    <li class="mb-2"><i class="feather-file-text text-info me-2"></i> <strong>{{ active_policies }}</strong> apólices ativas na carteira.</li>
+                    {% endif %}
+                    {% if not renewals_due_30d and not open_claims %}
+                    <li class="text-muted"><i class="feather-check-circle text-success me-2"></i> Tudo em dia! Nenhum alerta pendente.</li>
                     {% endif %}
                 </ul>
             </div>
         </div>
     </div>
 </div>
-{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var COLORS = ['#3454d1','#28a745','#ffc107','#dc3545','#17a2b8','#6f42c1','#fd7e14','#20c997'];
+
+    function formatCurrency(value) {
+        return 'R$ ' + Number(value).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    var funnelContainer = document.getElementById('funnelContainer');
+    var funnelLabels = {{ funnel_labels|safe }};
+    var funnelValues = {{ funnel_values|safe }};
+    var funnelAmounts = {{ funnel_amounts|safe }};
+    var funnelColors = {{ funnel_colors|safe }};
+
+    if (funnelContainer && funnelLabels.length > 0) {
+        var n = funnelLabels.length;
+        var rowH = 40;
+        var gap = 4;
+        var totalH = n * rowH + (n - 1) * gap;
+        var svgW = funnelContainer.clientWidth || 460;
+        var padX = 10;
+        var usableW = svgW - padX * 2;
+
+        var minPct = 0.30;
+        var widths = [];
+        for (var i = 0; i < n; i++) {
+            var pct = n > 1 ? 1 - (1 - minPct) * (i / (n - 1)) : 1;
+            widths.push(pct);
+        }
+
+        var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="' + totalH + '" viewBox="0 0 ' + svgW + ' ' + totalH + '" preserveAspectRatio="xMidYMid meet">';
+
+        for (var i = 0; i < n; i++) {
+            var y = i * (rowH + gap);
+            var w1 = usableW * widths[i];
+            var w2 = (i < n - 1) ? usableW * widths[i + 1] : w1 * 0.85;
+            var x1L = (svgW - w1) / 2;
+            var x1R = x1L + w1;
+            var x2L = (svgW - w2) / 2;
+            var x2R = x2L + w2;
+
+            var path = 'M' + x1L + ',' + y + ' L' + x1R + ',' + y + ' L' + x2R + ',' + (y + rowH) + ' L' + x2L + ',' + (y + rowH) + ' Z';
+            svg += '<path d="' + path + '" fill="' + funnelColors[i] + '" opacity="0.92"/>';
+
+            var midLeftX = x1L + (x2L - x1L) / 2;
+            var midRightX = x1R + (x2R - x1R) / 2;
+            var textY = y + rowH / 2 + 5;
+
+            svg += '<text x="' + (midLeftX + 12) + '" y="' + textY + '" fill="#fff" font-size="12" font-weight="600">' + funnelLabels[i] + '</text>';
+            var metaText = funnelValues[i] + ' deal' + (funnelValues[i] !== 1 ? 's' : '') + '  ·  ' + formatCurrency(funnelAmounts[i]);
+            svg += '<text x="' + (midRightX - 12) + '" y="' + textY + '" fill="rgba(255,255,255,0.9)" font-size="10" text-anchor="end">' + metaText + '</text>';
+        }
+
+        svg += '</svg>';
+        funnelContainer.innerHTML = svg;
+    } else if (funnelContainer) {
+        funnelContainer.innerHTML = '<div class="text-center py-4 text-muted">Nenhum pipeline configurado.</div>';
+    }
+
+    var prodCtx = document.getElementById('chartProduction');
+    if (prodCtx) {
+        new Chart(prodCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ chart_months|safe }},
+                datasets: [
+                    {
+                        label: 'Prêmio (R$)',
+                        data: {{ chart_premiums|safe }},
+                        backgroundColor: 'rgba(52, 84, 209, 0.7)',
+                        borderRadius: 4,
+                    },
+                    {
+                        label: 'Comissão (R$)',
+                        data: {{ chart_commissions|safe }},
+                        backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                        borderRadius: 4,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top', labels: { boxWidth: 12 } } },
+                scales: {
+                    y: { beginAtZero: true, ticks: { callback: function(v) { return formatCurrency(v); } } }
+                }
+            }
+        });
+    }
+
+    var lobCtx = document.getElementById('chartByLob');
+    if (lobCtx) {
+        new Chart(lobCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ chart_lob_labels|safe }},
+                datasets: [{ data: {{ chart_lob_values|safe }}, backgroundColor: COLORS }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 8 } } }
+            }
+        });
+    }
+
+    var insCtx = document.getElementById('chartInsurer');
+    if (insCtx) {
+        new Chart(insCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ chart_insurer_labels|safe }},
+                datasets: [{ data: {{ chart_insurer_values|safe }}, backgroundColor: COLORS }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 8 } } }
+            }
+        });
+    }
+
+    var claimCtx = document.getElementById('chartClaims');
+    if (claimCtx) {
+        new Chart(claimCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ chart_claims_labels|safe }},
+                datasets: [{ data: {{ chart_claims_values|safe }}, backgroundColor: COLORS }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 8 } } }
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

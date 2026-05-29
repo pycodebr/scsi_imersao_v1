@@ -19,7 +19,9 @@
         </button>
     </div>
     {% elif object.ai_summary %}
-    <div class="alert alert-info mb-2">{{ object.ai_summary|linebreaksbr }}</div>
+    <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f5f3ff, #ede9fe); border-left: 4px solid #8b5cf6;">
+        <div class="card-body p-4" id="ai-summary-content">{{ object.ai_summary }}</div>
+    </div>
     {% if object.ai_summary_updated_at %}
     <small class="text-muted">Atualizado em: {{ object.ai_summary_updated_at|date:"d/m/Y H:i" }}</small>
     {% endif %}
@@ -34,6 +36,25 @@
 </div>
 
 <script>
+(function() {
+    var el = document.getElementById('ai-summary-content');
+    if (!el) return;
+    var text = el.textContent || el.innerText || '';
+    el.innerHTML = renderAiMarkdown(text);
+
+    function renderAiMarkdown(text) {
+        return text
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>')
+            .replace(/^### (.+)$/gm, '<h6 class="mt-2 mb-1">$1</h6>')
+            .replace(/^## (.+)$/gm, '<h5 class="mt-2 mb-1">$1</h5>')
+            .replace(/^# (.+)$/gm, '<h5 class="mt-2 mb-1">$1</h5>')
+            .replace(/^- (.+)$/gm, '<li>$1</li>')
+            .replace(/\n/g, '<br>');
+    }
+})();
+
 function triggerAiSummary(entityType, pk) {
     var btn = event.target.closest('button');
     if (btn) {

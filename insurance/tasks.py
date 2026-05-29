@@ -43,7 +43,7 @@ def check_renewals_due():
                     type=Notification.Type.RENEWAL,
                     title=f'Apólice {policy.policy_number} vence em {policy.end_date.strftime("%d/%m/%Y")}',
                     message=f'A apólice {policy.policy_number} vence em breve. Verifique a renovação.',
-                    url=f'/apolices/{policy.pk}/',
+                    url=f'/insurance/apolices/{policy.pk}/',
                 )
 
     return f'Created {created_count} renewals'

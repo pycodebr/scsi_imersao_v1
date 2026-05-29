@@ -2,17 +2,18 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView
 
-from base.mixins import RoleRequiredMixin, TenantQuerysetMixin
+from base.mixins import PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin
 from .models import Commission
 from .forms import CommissionSearchForm
 
 
-class CommissionListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
+class CommissionListView(PerPageMixin, RoleRequiredMixin, TenantQuerysetMixin, ListView):
     allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
     model = Commission
     template_name = 'commissions/commission_list.html'
     context_object_name = 'commissions'
-    paginate_by = 20
+    paginate_by = 10
+    per_page_query_params = ('status',)
 
     def get_queryset(self):
         qs = super().get_queryset().select_related('policy')

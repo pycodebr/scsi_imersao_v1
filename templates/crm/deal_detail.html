@@ -1,4 +1,5 @@
 {% extends 'base_app.html' %}
+{% load brl_tags %}
 
 {% block title %}{{ deal.title }} — CRM{% endblock %}
 {% block page_title %}{{ deal.title }}{% endblock %}
@@ -42,7 +43,7 @@
                     </div>
                     <div class="col-md-3 mb-3">
                         <small class="text-muted d-block">Valor Estimado</small>
-                        R$ {{ deal.estimated_value|floatformat:2 }}
+                        {{ deal.estimated_value|brl }}
                     </div>
                     <div class="col-md-3 mb-3">
                         <small class="text-muted d-block">Previsão</small>
