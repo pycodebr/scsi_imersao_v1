@@ -2951,13 +2951,21 @@ flowchart LR
 
 ### Sprint 9 — Clientes
 **Objetivo:** cadastro de clientes.
-- [ ] App `clients` com model `Client` (PF/PJ, `ai_summary`)
-- [ ] CRUD com `TenantQuerysetMixin` + busca/paginação
-- [ ] `UniqueConstraint(['brokerage','document'])`
-- [ ] Tela de detalhe com abas (apólices, propostas, sinistros, anexos)
-- [ ] Integrar anexos protegidos
+- [x] App `clients` com model `Client` (PF/PJ, `ai_summary`)
+- [x] CRUD com `TenantQuerysetMixin` + busca/paginação
+- [x] `UniqueConstraint(['brokerage','document'])`
+- [x] Tela de detalhe com abas (apólices, propostas, sinistros, anexos)
+- [x] Integrar anexos protegidos
 
 **Entrega:** clientes cadastrados, isolados por tenant, com anexos.
+
+> **Decisões da execução da Sprint 9:**
+> - **App `clients`** criada com model `Client` herdando `TenantAwareModel`. Campos conforme §14.5: `person_type` (PF/PJ), `name`, `trade_name`, `document`, `email`, `phone`, `birth_date`, endereço completo (7 campos), `notes`, `ai_summary` + `ai_summary_status` + `ai_summary_updated_at`, `is_active`.
+> - **`UniqueConstraint(['brokerage', 'document'])`** garante unicidade de CPF/CNPJ por corretora. Mesmo documento em diferentes brokerages é permitido (multi-tenancy).
+> - **CRUD completo:** `ClientListView` (busca por nome/documento/e-mail + filtro PF/PJ + paginação 25), `ClientCreateView`, `ClientUpdateView`, `ClientDetailView`. Todo ROLE pode listar e ver detalhes; criação restrita a owner/manager/broker/agent/producer; edição restrita a owner/manager/broker/agent.
+> - **`ClientDetailView`** com abas (via query param `?tab=`): aba "Informações" (dados principais, endereço, observações, resumo IA) e aba "Anexos" (reutiliza `document_attachments.html` do Sprint 8). Abas de Propostas/Azólices/Sinistros marcadas como "(em breve)" — serão implementadas nas sprints correspondentes.
+> - **Sidebar** atualizada: link "Clientes" agora aponta para `{% url 'clients:client_list' %}`.
+> - **`ClientSearchForm`** separada para filtros na listagem (busca textual + tipo de pessoa).
 
 ### Sprint 10 — Seguradoras e Ramos
 **Objetivo:** catálogos tenant-aware.

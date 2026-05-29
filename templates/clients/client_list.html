@@ -1,0 +1,78 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Clientes — SCSI{% endblock %}
+{% block page_title %}Clientes{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="/">Início</a></li>
+    <li class="breadcrumb-item active">Clientes</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'clients:client_create' %}" class="btn btn-primary btn-sm">Novo cliente</a>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-6">
+        <form method="get" class="d-flex gap-2">
+            {{ search_form.q }}
+            {{ search_form.person_type }}
+            <button type="submit" class="btn btn-outline-primary btn-sm">Buscar</button>
+        </form>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Documento</th>
+                <th>Tipo</th>
+                <th>E-mail</th>
+                <th>Telefone</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for client in clients %}
+            <tr>
+                <td><a href="{% url 'clients:client_detail' client.pk %}">{{ client.name }}</a></td>
+                <td>{{ client.document }}</td>
+                <td><span class="badge bg-secondary">{{ client.get_person_type_display }}</span></td>
+                <td>{{ client.email|default:"—" }}</td>
+                <td>{{ client.phone|default:"—" }}</td>
+                <td>
+                    {% if client.is_active %}
+                    <span class="badge bg-success">Ativo</span>
+                    {% else %}
+                    <span class="badge bg-danger">Inativo</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'clients:client_update' client.pk %}" class="btn btn-outline-primary btn-sm">Editar</a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="7" class="text-center text-muted">Nenhum cliente cadastrado.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if is_paginated %}
+<nav aria-label="Paginação">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&person_type={{ request.GET.person_type }}">Anterior</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&person_type={{ request.GET.person_type }}">Próximo</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
