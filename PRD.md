@@ -2852,14 +2852,23 @@ flowchart LR
 
 ### Sprint 4 — Autenticação por E-mail
 **Objetivo:** auth nativa por e-mail.
-- [ ] App `accounts` com `User` customizado (`USERNAME_FIELD='email'`)
-- [ ] `EmailBackend` em `accounts/backends.py`
-- [ ] CBVs de registro, login, logout, perfil
-- [ ] Recuperação de senha nativa (views + templates + e-mail)
-- [ ] Configurar e-mail via `.env`
-- [ ] 1ª migração com `User` customizado
+- [x] App `accounts` com `User` customizado (`USERNAME_FIELD='email'`)
+- [x] `EmailBackend` em `accounts/backends.py`
+- [x] CBVs de registro, login, logout, perfil
+- [x] Recuperação de senha nativa (views + templates + e-mail)
+- [x] Configurar e-mail via `.env`
+- [x] 1ª migração com `User` customizado
 
 **Entrega:** usuário registra, loga por e-mail e recupera senha.
+
+> **Decisões da execução da Sprint 4 (resolvendo ambiguidades):**
+> - **`User` customizado:** `AbstractUser` + `BaseModel` com `username=None`, `email=EmailField(unique=True)`, `USERNAME_FIELD='email'`, `REQUIRED_FIELDS=[]`. `UserManager` cria contas exclusivamente por e-mail (sem username). Campos `brokerage` (FK) e `role` são adicionados nas Sprints 5 e 7, respectivamente.
+> - **`EmailBackend`:** autentica por e-mail case-insensitive (`email__iexact`), com timing-safe hashing quando o e-mail não existe (mitiga user enumeration).
+> - **CBVs:** `RegisterView` (CreateView, auto-login após cadastro), `EmailLoginView` (LoginView com form de e-mail), `ProfileView` (UpdateView, `LoginRequiredMixin`). Password-reset usa as views nativas do Django (`PasswordResetView` etc.) com templates customizados do DS.
+> - **Templates:** 9 templates em `templates/accounts/` — `login.html`, `register.html`, `profile.html`, 4 de password-reset (`_form`, `_done`, `_confirm`, `_complete`) + e-mail (`_email.html`, `_subject.txt`). Todos herdam de `base_auth.html` (centro de card do DS).
+> - **Migração:** como o projeto ainda não tem dados em produção, a migration `0001_initial` foi recriada para incluir desde o início o `User` sem `username` e com `email` unique + `created_at`/`updated_at` do `BaseModel`. Isso evita migrations de alteração em DB existente.
+> - **E-mail:** backend default é `console.EmailBackend` para dev; em produção, configura-se SMTP via `.env` (`EMAIL_HOST`, `EMAIL_PORT`, etc. já documentados em `.env.example`). `AUTHENTICATION_BACKENDS` lista `EmailBackend` antes do `ModelBackend` (fallback).
+> - **Settings de auth:** `LOGIN_URL='accounts:login'`, `LOGIN_REDIRECT_URL='accounts:profile'`, `LOGOUT_REDIRECT_URL='accounts:login'`.
 
 ### Sprint 5 — Multi Tenant (núcleo)
 **Objetivo:** infraestrutura de isolamento por tenant.
