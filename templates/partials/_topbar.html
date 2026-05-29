@@ -1,0 +1,35 @@
+{# Topbar (Design System: nxl-header) com toggles e sino de notificações. #}
+<header class="nxl-header">
+    <div class="header-wrapper">
+        <div class="header-left d-flex align-items-center gap-4">
+            <a href="javascript:void(0);" class="nxl-head-mobile-toggler" id="mobile-collapse">
+                <div class="hamburger hamburger--arrowturn">
+                    <div class="hamburger-box"><div class="hamburger-inner"></div></div>
+                </div>
+            </a>
+            <div class="nxl-navigation-toggle">
+                <a href="javascript:void(0);" id="menu-mini-button">
+                    <i class="feather-align-left"></i>
+                </a>
+            </div>
+        </div>
+        <div class="header-right ms-auto">
+            <div class="d-flex align-items-center">
+                {# Sino de notificações (polling ligado na sprint de notificações). #}
+                <div class="nxl-h-item">
+                    <a href="#" class="nxl-head-link me-0 position-relative">
+                        <i class="feather-bell"></i>
+                        <span class="badge bg-danger nxl-h-badge" id="notification-badge" hidden>0</span>
+                    </a>
+                </div>
+                <div class="nxl-h-item">
+                    <a href="#" class="nxl-head-link me-0">
+                        <span class="user-avtar-text fw-semibold">
+                            {% if user.is_authenticated %}{{ user.get_username }}{% else %}Visitante{% endif %}
+                        </span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>

@@ -1978,7 +1978,7 @@ flowchart LR
 
 O arquivo **`design_system/design-system.html`** é a **fonte única de verdade visual** do SCSI. Cores, tipografia, espaçamentos, componentes, estados e padrões de UI **devem** ser extraídos dele. **É proibido inventar um design paralelo.**
 
-> **Status atual:** o arquivo `design_system/design-system.html` ainda **não está presente** no repositório. Ele é um **artefato obrigatório** a ser adicionado **antes** das sprints de frontend (a partir da Sprint que integra templates base). Até lá, nenhuma decisão visual definitiva deve ser tomada.
+> **Status atual (atualizado na Sprint 3):** o arquivo `design_system/design-system.html` **está presente e versionado** (tema Duralux / Bootstrap 5, classes `nxl-`, ícones feather). Os assets (`refs/duralux/css`, `fonts`, `images`) são servidos sob `vendor/duralux/` via `STATICFILES_DIRS`, os tokens foram extraídos para `static/css/tokens.css` e os templates base (`base.html`, `base_auth.html`, `base_app.html`) já consomem o DS.
 
 ### 38.2 Como Consumir o Design System
 
@@ -2833,14 +2833,22 @@ flowchart LR
 
 ### Sprint 3 — Configuração Django Base + Design System + Celery Bootstrap
 **Objetivo:** base de templates e bootstrap do Celery.
-- [ ] Adicionar `design_system/design-system.html` ao repo (artefato obrigatório)
-- [ ] Extrair tokens para `static/css/tokens.css`
-- [ ] Criar templates base: `base.html`, `base_auth.html`, `base_app.html` (menu lateral + topbar)
-- [ ] Configurar estáticos (collectstatic / WhiteNoise)
-- [ ] Criar `scsi/celery.py` e carregar no `scsi/__init__.py`
-- [ ] Rodar uma task de exemplo no worker
+- [X] Adicionar `design_system/design-system.html` ao repo (artefato obrigatório)
+- [X] Extrair tokens para `static/css/tokens.css`
+- [X] Criar templates base: `base.html`, `base_auth.html`, `base_app.html` (menu lateral + topbar)
+- [X] Configurar estáticos (collectstatic / WhiteNoise)
+- [X] Criar `core/celery.py` e carregar no `core/__init__.py`
+- [X] Rodar uma task de exemplo no worker
 
 **Entrega:** layout base do DS aplicado e Celery executando tasks.
+
+> **Decisões da execução da Sprint 3 (resolvendo ambiguidades):**
+> - **Assets do Design System (Duralux):** o DS é um tema Bootstrap 5 (convenção de classes `nxl-`, ícones feather). Em vez de duplicar os 565 arquivos de `refs/duralux`, os assets são servidos sob o prefixo `vendor/duralux/` via `STATICFILES_DIRS` (tupla `('vendor/duralux', design_system/refs/duralux)`) — mantendo o DS como fonte única. O `.dockerignore` deixou de excluir `design_system/refs/` para os assets irem na imagem.
+> - **`tokens.css`:** extraídos os tokens reais do tema (primary `#3454d1`, success `#17c666`, danger `#ea4d4d`, etc., tipografia, raios, body-bg `#f0f2f8`) para `static/css/tokens.css` como CSS custom properties `--scsi-*`. Nenhum valor inventado.
+> - **JS do Design System ausente:** o artefato do DS embarca CSS + fontes, mas **não** os arquivos `js/` que seu HTML referencia. Para não enviar `<script>` quebrados, foi criado um `static/js/app.js` mínimo (vanilla) que faz só o toggle do menu lateral usando as classes que o próprio tema espera (`html.minimenu`, `.mob-navigation-active`). Bundle interativo completo (Bootstrap JS) fica para quando os assets JS do DS forem fornecidos / sprint de frontend que precisar.
+> - **Templates base:** `base.html` (esqueleto + CSS do DS + tokens), `base_auth.html` (card centralizado para login/registro/reset) e `base_app.html` (shell `nxl-container` com `partials/_sidebar.html` + `partials/_topbar.html`). Links de menu são `href="#"` (placeholders) até as rotas de cada feature existirem, evitando acoplamento a URLs ainda inexistentes.
+> - **Estáticos / WhiteNoise:** `whitenoise.middleware.WhiteNoiseMiddleware` logo após o `SecurityMiddleware` e `STORAGES.staticfiles = whitenoise.storage.CompressedStaticFilesStorage` (compressão sem manifest, para não quebrar o `collectstatic` com os muitos `url()` do tema).
+> - **Bootstrap do Celery:** `core/celery.py` (`Celery('scsi')`, `config_from_object('django.conf:settings', namespace='CELERY')`, `autodiscover_tasks()`) carregado em `core/__init__.py`. Settings `CELERY_*` lidas do `.env`. Adicionados `celery`, `redis` (backend de resultado), `django-celery-beat` (DatabaseScheduler usado pelo serviço `celery_beat` do Compose) e `whitenoise` ao `requirements.txt`. `django_celery_beat` entrou em `INSTALLED_APPS`. Task de exemplo em `base/tasks.py` (`add`). Validação ao vivo: worker recebeu e concluiu `base.tasks.add(2,3) -> 5`; beat subiu com `DatabaseScheduler`.
 
 ### Sprint 4 — Autenticação por E-mail
 **Objetivo:** auth nativa por e-mail.

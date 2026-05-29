@@ -10,5 +10,4 @@ db.sqlite3-journal
 media/
 staticfiles/
 .DS_Store
-design_system/refs/
 *.log

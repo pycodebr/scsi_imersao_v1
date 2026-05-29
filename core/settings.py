@@ -47,15 +47,20 @@ DJANGO_APPS = [
     'django.contrib.staticfiles',
 ]
 
+THIRD_PARTY_APPS = [
+    'django_celery_beat',
+]
+
 LOCAL_APPS = [
     'base',
     'accounts',
 ]
 
-INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS
+INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -69,7 +74,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -137,6 +142,23 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = env('STATIC_ROOT', default=BASE_DIR / 'staticfiles')
 
+# Estáticos do projeto (tokens) + assets do Design System (Duralux) servidos sob
+# o prefixo `vendor/duralux/` direto da pasta de referência — sem duplicar arquivos.
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+    ('vendor/duralux', BASE_DIR / 'design_system' / 'refs' / 'duralux'),
+]
+
+# WhiteNoise: compressão dos estáticos coletados (servir via app em prod).
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+    },
+}
+
 
 # Media protegida — nunca servida publicamente (ver seção 16 do PRD).
 
@@ -148,3 +170,13 @@ MEDIA_ROOT = env('MEDIA_ROOT', default=BASE_DIR / 'media')
 # https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Celery
+# https://docs.celeryq.dev/en/stable/django/first-steps-with-django.html
+
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='amqp://guest:guest@localhost:5672//')
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
