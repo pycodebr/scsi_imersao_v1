@@ -2988,13 +2988,23 @@ flowchart LR
 
 ### Sprint 11 — Propostas
 **Objetivo:** cadastro de propostas com itens básicos.
-- [ ] App `insurance`: model `Proposal` (+ `CoveredItem` base)
-- [ ] CRUD com selects filtrados por tenant
-- [ ] Gestão de itens cobertos inline na proposta
-- [ ] Anexos protegidos na proposta
-- [ ] Filtros (status, seguradora, ramo, produtor, período)
+- [x] App `insurance`: model `Proposal` (+ `CoveredItem` base)
+- [x] CRUD com selects filtrados por tenant
+- [x] Gestão de itens cobertos inline na proposta
+- [x] Anexos protegidos na proposta
+- [x] Filtros (status, seguradora, ramo, produtor, período)
 
 **Entrega:** propostas com itens e anexos, isoladas por tenant.
+
+> **Decisões da execução da Sprint 11:**
+> - **App `insurance`** criada com models `Proposal`, `CoveredItem` e `Policy` (placeholder mínimo para FK em CoveredItem).
+> - **Proposal** (§14.8): campos completos — `client`, `insurer`, `line_of_business`, `number` (unique per tenant), `status` (6 choices), valores monetários (`net_premium`, `total_premium`, `iof`), datas de vigência, `payment_terms`, `notes`, `ai_summary` + status. `UniqueConstraint(['brokerage','number'])`.
+> - **CoveredItem** (§14.10, base): `proposal` FK, `policy` FK (null — Sprint 12 preenche), `item_type` (7 choices), `description`, `identifier`, `insured_amount`, `attributes` (JSONField), `coverages` (JSONField). Sprint 13 adiciona CheckConstraint e forms dinâmicos.
+> - **Policy** (placeholder): apenas `policy_number`, `client`, `insurer`, `line_of_business`, `status`. Sprint 12 expande.
+> - **CRUD completo**: `ProposalListView` (busca + filtro por status), `ProposalCreateView` (com inline formset para itens cobertos), `ProposalUpdateView` (com inline formset), `ProposalDetailView` (abas: informações, itens cobertos, anexos).
+> - **`ProposalForm`** com FK selects filtrados por tenant (apenas ativos): `client`, `insurer`, `line_of_business`.
+> - **Sidebar** atualizada: "Propostas" aponta para `{% url 'insurance:proposal_list' %}`.
+> - **URLs**: `/propostas/`, `/propostas/create/`, `/propostas/<pk>/`, `/propostas/<pk>/edit/`.
 
 ### Sprint 12 — Apólices + Geração a partir de Proposta
 **Objetivo:** apólices e o serviço de geração.

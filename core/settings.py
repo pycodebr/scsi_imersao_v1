@@ -58,6 +58,7 @@ LOCAL_APPS = [
     'documents',
     'clients',
     'insurers',
+    'insurance',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
