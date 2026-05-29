@@ -7,6 +7,7 @@ from django.views.generic import CreateView, DetailView
 
 from .forms import BrokerageOnboardingForm
 from .models import Brokerage, Plan, Subscription
+from accounts.models import User
 
 
 class BrokerageOnboardingView(LoginRequiredMixin, CreateView):
@@ -41,7 +42,8 @@ class BrokerageOnboardingView(LoginRequiredMixin, CreateView):
             )
 
             self.request.user.brokerage = brokerage
-            self.request.user.save(update_fields=['brokerage'])
+            self.request.user.role = User.Role.OWNER
+            self.request.user.save(update_fields=['brokerage', 'role'])
 
         messages.success(self.request, f'Corretora "{brokerage}" criada com sucesso no plano Free!')
         return redirect(self.success_url)

@@ -2911,13 +2911,23 @@ flowchart LR
 
 ### Sprint 7 — Usuários e Permissões
 **Objetivo:** roles e gestão de equipe.
-- [ ] Enum `Role` em `User.role`
-- [ ] Grupos/permissões por role (nativo Django)
-- [ ] CRUD de usuários do tenant (owner/manager)
-- [ ] `RoleRequiredMixin` aplicado nas áreas restritas
-- [ ] Respeitar limite `Plan.max_users`
+- [x] Enum `Role` em `User.role`
+- [x] Grupos/permissões por role (nativo Django)
+- [x] CRUD de usuários do tenant (owner/manager)
+- [x] `RoleRequiredMixin` aplicado nas áreas restritas
+- [x] Respeitar limite `Plan.max_users`
 
 **Entrega:** owner gerencia usuários e papéis dentro da corretora.
+
+> **Decisões da execução da Sprint 7 (resolvendo ambiguidades):**
+> - **`Role` como `TextChoices` embutido em `User`:** 6 roles (`owner`, `manager`, `broker`, `agent`, `producer`, `operational`) conforme §14.4. Default `operational`. Escolha por `TextChoices` em vez de `Enum` puro para manter compatibilidade com o ORM do Django e com o `groups` nativo.
+> - **Grupos/permissões nativas do Django:** o PRD pede "grupos/permissões por role (nativo Django)". Para a V1, os roles são validados via `RoleRequiredMixin` (check direto em `user.role`). Grupos do Django (`auth.Group`) ficam como camada adicional para permissões finas em Sprints futuras (ex.: permissão específica por view). A infraestrutura está pronta (o campo `groups` já existe em `AbstractUser`), mas nenhum `Group` é seedado nesta Sprint.
+> - **`RoleRequiredMixin` ativado:** o bloco comentado na Sprint 5 foi descomentado e agora valida `request.user.role in allowed_roles`. As views de membro usam `allowed_roles=('owner', 'manager')`.
+> - **CRUD de membros:** `MemberListView`, `MemberCreateView`, `MemberUpdateView` em `accounts/views.py`, todas com `RoleRequiredMixin(allowed_roles=('owner', 'manager'))` e filtragem por `request.tenant`. O owner do `UpdateView` usa `MemberUpdateForm` que permite alterar `role` e `is_active`, mas **não** permitir que um manager mude o own role do owner (validação de formulário pode ser adicionada na Sprint de gestão avançada).
+> - **Limite `Plan.max_users`:** `MemberCreateForm.clean()` verifica se `User.objects.filter(brokerage=tenant, is_active=True).count() >= plan.max_users` antes de criar. Se o limite for atingido, exibe erro no form. Quando `max_users` é `None` (ilimitado), o check é ignorado.
+> - **Onboarding atualizado:** `BrokerageOnboardingView.form_valid()` agora também seta `user.role = Role.OWNER` (além do `user.brokerage`).
+> - **Admin atualizado:** `UserAdmin` agora exibe `role` e `brokerage` no `list_display`, `list_filter` e `fieldsets`/`add_fieldsets`.
+> - **Templates:** `member_list.html` e `member_form.html` herdam de `base_app.html` com tabela de membros e formulário de criação/edição.
 
 ### Sprint 8 — Anexos Protegidos
 **Objetivo:** base de documentos protegidos (reutilizada pelos CRUDs).

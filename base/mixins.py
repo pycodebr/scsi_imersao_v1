@@ -27,8 +27,7 @@ class RoleRequiredMixin(AccessMixin):
     """Bloqueia o acesso se o usuário não tiver um dos ``allowed_roles``.
 
     ``allowed_roles`` pode ser uma lista/tupla de strings ou uma string única.
-    O campo ``role`` do ``User`` é introduzido na Sprint 7; até lá, o mixin
-    permite acesso a qualquer usuário autenticado com ``brokerage``.
+    Exige também que o usuário tenha ``brokerage`` vinculada.
     """
 
     allowed_roles = None
@@ -41,10 +40,13 @@ class RoleRequiredMixin(AccessMixin):
         if tenant is None:
             raise PermissionDenied('Usuário sem corretora vinculada.')
 
-        # Sprint 7 introduzirá o campo `role`; aqui validamos só o vínculo.
-        # Quando `role` existir, descomente o bloco abaixo:
-        # if self.allowed_roles:
-        #     if request.user.role not in (self.allowed_roles if isinstance(self.allowed_roles, (list, tuple)) else (self.allowed_roles,)):
-        #         raise PermissionDenied('Papel não autorizado.')
+        if self.allowed_roles:
+            allowed = (
+                self.allowed_roles
+                if isinstance(self.allowed_roles, (list, tuple))
+                else (self.allowed_roles,)
+            )
+            if request.user.role not in allowed:
+                raise PermissionDenied('Papel não autorizado.')
 
         return super().dispatch(request, *args, **kwargs)

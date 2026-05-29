@@ -2,10 +2,18 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, UpdateView
+from django.views.generic import CreateView, ListView, UpdateView
 
-from .forms import EmailAuthenticationForm, UserProfileForm, UserRegistrationForm
+from base.mixins import RoleRequiredMixin, TenantQuerysetMixin
+from .forms import (
+    EmailAuthenticationForm,
+    MemberCreateForm,
+    MemberUpdateForm,
+    UserRegistrationForm,
+    UserProfileForm,
+)
 from .models import User
 
 
@@ -45,4 +53,63 @@ class ProfileView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         messages.success(self.request, 'Perfil atualizado.')
+        return super().form_valid(form)
+
+
+class MemberListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
+    """Lista membros da corretora — owner/manager."""
+
+    allowed_roles = ('owner', 'manager')
+    model = User
+    template_name = 'accounts/member_list.html'
+    context_object_name = 'members'
+
+    def get_queryset(self):
+        return (
+            User.objects
+            .filter(brokerage=self.request.tenant, is_active=True)
+            .order_by('role', 'first_name')
+        )
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['max_users'] = self.request.tenant.plan.max_users
+        ctx['current_count'] = self.get_queryset().count()
+        return ctx
+
+
+class MemberCreateView(RoleRequiredMixin, CreateView):
+    """Cria membro dentro do tenant — owner/manager."""
+
+    allowed_roles = ('owner', 'manager')
+    model = User
+    form_class = MemberCreateForm
+    template_name = 'accounts/member_form.html'
+    success_url = reverse_lazy('accounts:member_list')
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['brokerage'] = self.request.tenant
+        kwargs['max_users'] = self.request.tenant.plan.max_users
+        return kwargs
+
+    def form_valid(self, form):
+        messages.success(self.request, f'Membro {form.instance.email} criado com sucesso.')
+        return super().form_valid(form)
+
+
+class MemberUpdateView(RoleRequiredMixin, UpdateView):
+    """Atualiza membro dentro do tenant — owner/manager."""
+
+    allowed_roles = ('owner', 'manager')
+    model = User
+    form_class = MemberUpdateForm
+    template_name = 'accounts/member_form.html'
+    success_url = reverse_lazy('accounts:member_list')
+
+    def get_queryset(self):
+        return User.objects.filter(brokerage=self.request.tenant)
+
+    def form_valid(self, form):
+        messages.success(self.request, f'Membro {form.instance.email} atualizado.')
         return super().form_valid(form)

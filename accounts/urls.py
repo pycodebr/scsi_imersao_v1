@@ -1,7 +1,14 @@
 from django.contrib.auth import views as auth_views
 from django.urls import path, reverse_lazy
 
-from .views import EmailLoginView, ProfileView, RegisterView
+from .views import (
+    EmailLoginView,
+    MemberCreateView,
+    MemberListView,
+    MemberUpdateView,
+    ProfileView,
+    RegisterView,
+)
 
 app_name = 'accounts'
 
@@ -10,6 +17,9 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('register/', RegisterView.as_view(), name='register'),
     path('profile/', ProfileView.as_view(), name='profile'),
+    path('members/', MemberListView.as_view(), name='member_list'),
+    path('members/create/', MemberCreateView.as_view(), name='member_create'),
+    path('members/<int:pk>/edit/', MemberUpdateView.as_view(), name='member_update'),
 
     # Recuperação de senha (fluxo nativo do Django, templates do Design System).
     path(

@@ -34,10 +34,15 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser, BaseModel):
-    """Usuário do sistema, autenticado por e-mail (sem username).
+    """Usuário do sistema, autenticado por e-mail (sem username)."""
 
-    O campo ``role`` é adicionado na Sprint 7.
-    """
+    class Role(models.TextChoices):
+        OWNER = 'owner', 'Owner'
+        MANAGER = 'manager', 'Manager'
+        BROKER = 'broker', 'Corretor'
+        AGENT = 'agent', 'Agente'
+        PRODUCER = 'producer', 'Produtor'
+        OPERATIONAL = 'operational', 'Operacional'
 
     username = None
     email = models.EmailField('e-mail', unique=True)
@@ -48,6 +53,12 @@ class User(AbstractUser, BaseModel):
         blank=True,
         related_name='members',
         verbose_name='corretora',
+    )
+    role = models.CharField(
+        'papel',
+        max_length=12,
+        choices=Role.choices,
+        default=Role.OPERATIONAL,
     )
 
     USERNAME_FIELD = 'email'
