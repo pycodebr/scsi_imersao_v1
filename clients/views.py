@@ -82,9 +82,10 @@ class ClientDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         client = self.object
-        ctx['content_type_id'] = ContentType.objects.get_for_model(Client).pk
+        client_ct = ContentType.objects.get_for_model(Client)
+        ctx['content_type_id'] = client_ct.pk
         ctx['documents'] = Document.objects.filter(
-            content_type__model='client',
+            content_type_id=client_ct.pk,
             object_id=client.pk,
             brokerage=self.request.tenant,
         ).order_by('-created_at')

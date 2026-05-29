@@ -2969,12 +2969,22 @@ flowchart LR
 
 ### Sprint 10 — Seguradoras e Ramos
 **Objetivo:** catálogos tenant-aware.
-- [ ] App `insurers`: models `Insurer` e `LineOfBusiness`
-- [ ] CRUDs isolados por tenant
-- [ ] Seeds padrão de ramos no onboarding (revisar Sprint 6)
-- [ ] Selects de FK filtrando ativos do tenant
+- [x] App `insurers`: models `Insurer` e `LineOfBusiness`
+- [x] CRUDs isolados por tenant
+- [x] Seeds padrão de ramos no onboarding (revisar Sprint 6)
+- [x] Selects de FK filtrando ativos do tenant
 
 **Entrega:** seguradoras e ramos disponíveis para propostas/apólices.
+
+> **Decisões da execução da Sprint 10:**
+> - **App `insurers`** com duas models: `Insurer` (§14.6) e `LineOfBusiness` (§14.7), ambas `TenantAwareModel`.
+> - **Insurer**: `name`, `cnpj`, `susep_code`, `email`, `phone`, `is_active`. `UniqueConstraint(['brokerage','name'])`.
+> - **LineOfBusiness**: `name`, `code` (SUSEP), `category` (TextChoices: auto/life/property/business/travel/health/other), `is_active`. `UniqueConstraint(['brokerage','name'])`.
+> - **Seed de ramos no onboarding**: signal `post_save` em `tenants.Brokerage` (criado em `insurers/signals.py`) dispara `seed_default_lobs` que cria 13 ramos padrão (Auto, Vida, Residencial, Empresarial, Viagem, Saúde, etc.) para a corretora recém-criada. Funciona em conjunto com o BrokerageOnboardingView da Sprint 6.
+> - **CRUDs completos**: `InsurerListView/CreateView/UpdateView` e `LineOfBusinessListView/CreateView/UpdateView` — todos com `TenantQuerysetMixin` + `RoleRequiredMixin`. Busca textual e filtros por categoria/status. Paginação 25.
+> - **Formulários** com FK selects filtrando ativos do tenant: `InsurerForm` e `LineOfBusinessForm` têm widgets com `form-control`. O campo `is_active` usa `CheckboxInput` com `form-check-input`.
+> - **Sidebar** atualizada: seção "Catálogos" com links "Seguradoras" e "Ramos".
+> - **URLs**: `/insurers/seguradoras/`, `/insurers/ramos/` — CRUD em português, `[pt-br]`.
 
 ### Sprint 11 — Propostas
 **Objetivo:** cadastro de propostas com itens básicos.

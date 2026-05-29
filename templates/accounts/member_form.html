@@ -37,10 +37,12 @@
                     <div class="alert alert-danger py-2">{{ form.non_field_errors }}</div>
                     {% endif %}
 
-                    <button type="submit" class="btn btn-primary">
-                        {% if form.instance.pk %}Salvar{% else %}Criar membro{% endif %}
-                    </button>
-                    <a href="{% url 'accounts:member_list' %}" class="btn btn-outline-secondary ms-2">Cancelar</a>
+                    <div class="d-flex justify-content-between mt-3">
+                        <a href="{% url 'accounts:member_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if form.instance.pk %}Salvar{% else %}Criar membro{% endif %}
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

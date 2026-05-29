@@ -2,6 +2,8 @@ services:
   app:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
+    environment:
+      RUN_MIGRATIONS: '1'
     volumes:
       - .:/app
       - media_data:/app/media
