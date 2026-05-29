@@ -2892,13 +2892,22 @@ flowchart LR
 
 ### Sprint 6 — Corretoras e Onboarding
 **Objetivo:** cadastro do tenant e planos.
-- [ ] Models `Plan` e `Subscription`
-- [ ] Fluxo de signup (usuário + corretora) com CNPJ e razão social obrigatórios
-- [ ] Transação atômica: cria `Brokerage` + `User(owner)` + `Subscription(Free)`
-- [ ] Signal pós-criação: seed de ramos padrão e pipeline padrão
-- [ ] Página "Meu Plano" (Free ativo; pagos "Em breve" desabilitados)
+- [x] Models `Plan` e `Subscription`
+- [x] Fluxo de signup (usuário + corretora) com CNPJ e razão social obrigatórios
+- [x] Transação atômica: cria `Brokerage` + `User(owner)` + `Subscription(Free)`
+- [x] Signal pós-criação: seed de ramos padrão e pipeline padrão
+- [x] Página "Meu Plano" (Free ativo; pagos "Em breve" desabilitados)
 
 **Entrega:** novo usuário cria corretora no plano Free e é direcionado ao dashboard.
+
+> **Decisões da execução da Sprint 6 (resolvendo ambiguidades):**
+> - **`Plan` já existia** desde a Sprint 5 (criada junto com `Brokerage` pois a FK exigia). O seed do plano Free foi implementado via `post_migrate` signal em `tenants/signals.py`, que cria o plano `Free` (3 usuários, 50 clientes, 100 apólices) caso não exista. Planos pagos (Pro, Business) ficam como `is_available=False` e são criados manualmente ou via data migration futura.
+> - **`Subscription` model** (§14.3): `OneToOneField(Brokerage)` na V1 (uma assinatura por corretora), `status` com choices `active/past_due/canceled`, `started_at` com `auto_now_add`, `expires_at` nullable. FK para `Plan` com `PROTECT`.
+> - **Fluxo de signup:** `RegisterView` redireciona para `tenants:onboarding` após criação do usuário (login automático). `BrokerageOnboardingView` (LoginRequiredMixin) verifica se o usuário já tem corretora; se sim, redireciona ao plano. Se não, exibe o formulário com CNPJ e razão social obrigatórios. Transação atômica: `Brokerage(owner=user, plan=free)` → `Subscription(brokerage, plan=free, status=active)` → `user.brokerage = brokerage`.
+> - **Validação de CNPJ:** `BrokerageOnboardingForm.clean_cnpj()` verifica se contém 14 dígitos. Validação completa de dígitos verificadores fica como melhoria futura (biboteca `validate-docbr` na Sprint de clientes).
+> - **Seed de ramos/pipeline:** o PRD pede "seed de ramos padrão e pipeline padrão" no signal pós-criação. `LineOfBusiness` (§14.7) pertence ao app `insurers` e `Pipeline`/`Stage` (§14.18) ao app `crm` — ambos ainda não existem. Em vez de antecipar apps inteiros, o signal `post_migrate` faz apenas o seed do plano Free. O seed de ramos e pipeline será implementado nas Sprints dos respectivos apps, com um signal `post_save` em `Brokerage` quando chegar a hora.
+> - **Página "Meu Plano":** `MyPlanView` mostra a assinatura ativa, limites do plano e lista todos os planos (pagos com badge "Em breve"). Usuários sem corretora veem mensagem e botão para onboarding. Template em `tenants/my_plan.html` herda de `base_app.html`.
+> - **Onboarding template:** `tenants/onboarding.html` herda de `base_auth.html` (card centralizado, DS).
 
 ### Sprint 7 — Usuários e Permissões
 **Objetivo:** roles e gestão de equipe.

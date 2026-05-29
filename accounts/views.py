@@ -10,12 +10,12 @@ from .models import User
 
 
 class RegisterView(CreateView):
-    """Cadastro de usuário; autentica e redireciona ao concluir."""
+    """Cadastro de usuário; autentica e redireciona ao onboarding."""
 
     model = User
     form_class = UserRegistrationForm
     template_name = 'accounts/register.html'
-    success_url = reverse_lazy('accounts:profile')
+    success_url = reverse_lazy('tenants:onboarding')
 
     def form_valid(self, form):
         response = super().form_valid(form)

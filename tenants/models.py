@@ -72,3 +72,45 @@ class Plan(BaseModel):
 
     def __str__(self):
         return self.name
+
+
+class Subscription(BaseModel):
+    """Assinatura da corretora — vínculo entre Brokerage e Plan.
+
+    Na V1, sempre ``active`` no plano Free. OneToOneField na V1 (uma
+    corretora = uma assinatura). Em versões futuras pode virar FK para
+    permitir múltiplas assinaturas/histórico.
+    """
+
+    class Status(models.TextChoices):
+        ACTIVE = 'active', 'Ativa'
+        PAST_DUE = 'past_due', 'Em atraso'
+        CANCELED = 'canceled', 'Cancelada'
+
+    brokerage = models.OneToOneField(
+        Brokerage,
+        on_delete=models.CASCADE,
+        related_name='subscription',
+        verbose_name='corretora',
+    )
+    plan = models.ForeignKey(
+        Plan,
+        on_delete=models.PROTECT,
+        related_name='subscriptions',
+        verbose_name='plano',
+    )
+    status = models.CharField(
+        'status',
+        max_length=10,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
+    started_at = models.DateTimeField('início em', auto_now_add=True)
+    expires_at = models.DateTimeField('expira em', null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'assinatura'
+        verbose_name_plural = 'assinaturas'
+
+    def __str__(self):
+        return f'{self.brokerage} — {self.plan} ({self.get_status_display()})'
