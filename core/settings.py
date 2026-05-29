@@ -49,6 +49,8 @@ DJANGO_APPS = [
 
 THIRD_PARTY_APPS = [
     'django_celery_beat',
+    'django_celery_results',
+    'dj_celery_panel',
 ]
 
 LOCAL_APPS = [
@@ -63,6 +65,7 @@ LOCAL_APPS = [
     'partners',
     'commissions',
     'crm',
+    'notifications',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

@@ -17,10 +17,14 @@
             <div class="d-flex align-items-center">
                 {# Sino de notificações (polling ligado na sprint de notificações). #}
                 <div class="nxl-h-item">
-                    <a href="#" class="nxl-head-link me-0 position-relative">
+                    <a href="#" class="nxl-head-link me-0 position-relative" id="notification-bell">
                         <i class="feather-bell"></i>
                         <span class="badge bg-danger nxl-h-badge" id="notification-badge" hidden>0</span>
                     </a>
+                    <div class="dropdown-menu dropdown-menu-end p-0 shadow" id="notification-dropdown" style="display:none; width: 320px; max-height: 400px; overflow-y: auto;">
+                        <div class="p-3 border-bottom"><strong>Notificações</strong></div>
+                        <div id="notification-list" class="p-0"></div>
+                    </div>
                 </div>
                 <div class="nxl-h-item">
                     <a href="#" class="nxl-head-link me-0">
@@ -33,3 +37,58 @@
         </div>
     </div>
 </header>
+
+<script>
+(function() {
+    const bell = document.getElementById('notification-bell');
+    const badge = document.getElementById('notification-badge');
+    const dropdown = document.getElementById('notification-dropdown');
+    const list = document.getElementById('notification-list');
+
+    function updateBadge() {
+        fetch('/notifications/unread/').then(r => r.json()).then(d => {
+            if (d.count > 0) {
+                badge.textContent = d.count > 99 ? '99+' : d.count;
+                badge.hidden = false;
+            } else {
+                badge.hidden = true;
+            }
+        }).catch(() => {});
+    }
+
+    bell.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (dropdown.style.display === 'none') {
+            dropdown.style.display = 'block';
+            fetch('/notifications/').then(r => r.json()).then(data => {
+                if (!data.length) {
+                    list.innerHTML = '<div class="p-3 text-center text-muted">Sem notificações</div>';
+                    return;
+                }
+                list.innerHTML = data.map(n => `
+                    <a href="${n.url || '#'}" class="dropdown-item py-2 px-3 border-bottom ${n.is_read ? '' : 'fw-bold'}" data-id="${n.id}">
+                        <div>${n.title}</div>
+                        <small class="text-muted">${new Date(n.created_at).toLocaleString('pt-BR')}</small>
+                    </a>
+                `).join('');
+                list.querySelectorAll('[data-id]').forEach(el => {
+                    el.addEventListener('click', function() {
+                        fetch(`/notifications/${el.dataset.id}/read/`, {method: 'POST', headers: {'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value}});
+                    });
+                });
+            });
+        } else {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!bell.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    updateBadge();
+    setInterval(updateBadge, 30000);
+})();
+</script>
