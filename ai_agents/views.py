@@ -49,7 +49,7 @@ class GenerateSummaryView(RoleRequiredMixin, View):
         if obj.ai_summary_status == 'processing':
             return JsonResponse({'status': 'processing', 'message': 'Resumo já está sendo gerado.'}, status=202)
 
-        Model.objects.filter(pk=pk).update(ai_summary_status='processing')
+        Model.objects.filter(pk=pk, brokerage=request.tenant).update(ai_summary_status='processing')
 
         task_map = {
             'client': 'ai_agents.tasks.generate_client_summary',

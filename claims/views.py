@@ -68,3 +68,6 @@ class ClaimDetailView(TenantQuerysetMixin, LoginRequiredMixin, DetailView):
     model = Claim
     template_name = 'claims/claim_detail.html'
     context_object_name = 'claim'
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('policy', 'covered_item', 'policy__client', 'policy__insurer')

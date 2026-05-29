@@ -32,3 +32,11 @@ class CommissionDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
     model = Commission
     template_name = 'commissions/commission_detail.html'
     context_object_name = 'commission'
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('policy', 'policy__client', 'policy__insurer')
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['splits'] = self.object.splits.select_related('agent', 'producer')
+        return ctx

@@ -1,6 +1,7 @@
 import json
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DetailView, View
 
@@ -14,6 +15,9 @@ class PipelineListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
     model = Pipeline
     template_name = 'crm/pipeline_list.html'
     context_object_name = 'pipelines'
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('stages')
 
 
 class PipelineCreateView(RoleRequiredMixin, TenantQuerysetMixin, CreateView):
@@ -116,6 +120,16 @@ class DealDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
     template_name = 'crm/deal_detail.html'
     context_object_name = 'deal'
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'pipeline', 'stage', 'client', 'producer', 'agent',
+            'insurer', 'line_of_business', 'proposal',
+        ).prefetch_related(
+            'stage_histories__from_stage',
+            'stage_histories__to_stage',
+            'stage_histories__changed_by',
+        )
+
 
 class DealKanbanView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
     allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
@@ -135,9 +149,9 @@ class DealMoveStageView(RoleRequiredMixin, View):
     def post(self, request, pk):
         import json as _json
         data = _json.loads(request.body)
-        deal = Deal.objects.get(pk=pk, brokerage=request.tenant)
+        deal = get_object_or_404(Deal, pk=pk, brokerage=request.tenant)
         new_stage_id = data.get('stage_id')
-        new_stage = Stage.objects.get(pk=new_stage_id, pipeline=deal.pipeline)
+        new_stage = get_object_or_404(Stage, pk=new_stage_id, pipeline=deal.pipeline, brokerage=request.tenant)
         old_stage = deal.stage
         deal.stage = new_stage
         if new_stage.is_won:

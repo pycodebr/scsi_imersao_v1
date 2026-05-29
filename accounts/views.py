@@ -56,7 +56,7 @@ class ProfileView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
-class MemberListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
+class MemberListView(RoleRequiredMixin, ListView):
     """Lista membros da corretora — owner/manager."""
 
     allowed_roles = ('owner', 'manager')

@@ -124,6 +124,11 @@ class ProposalDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
     template_name = 'insurance/proposal_detail.html'
     context_object_name = 'proposal'
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'client', 'insurer', 'line_of_business', 'producer', 'agent',
+        ).prefetch_related('items')
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         proposal = self.object
@@ -230,6 +235,11 @@ class PolicyDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
     template_name = 'insurance/policy_detail.html'
     context_object_name = 'policy'
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'client', 'insurer', 'line_of_business', 'proposal', 'producer', 'agent',
+        ).prefetch_related('items', 'endorsements')
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         policy = self.object
@@ -325,6 +335,9 @@ class EndorsementDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
     template_name = 'insurance/endorsement_detail.html'
     context_object_name = 'endorsement'
 
+    def get_queryset(self):
+        return super().get_queryset().select_related('policy', 'policy__client', 'policy__insurer')
+
 
 class RenewalListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
     allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
@@ -392,3 +405,6 @@ class RenewalDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
     model = Renewal
     template_name = 'insurance/renewal_detail.html'
     context_object_name = 'renewal'
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('policy', 'policy__client', 'new_policy')

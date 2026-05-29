@@ -19,6 +19,13 @@ def _get_queryset(brokerage, report_type, date_from=None, date_to=None, status=N
         'commissions': 'commissions.models.Commission',
         'insurers': 'insurers.models.Insurer',
     }
+    select_related_map = {
+        'policies': ['client', 'insurer'],
+        'proposals': ['client', 'insurer'],
+        'claims': ['policy'],
+        'renewals': ['policy', 'new_policy'],
+        'commissions': ['policy', 'policy__client', 'policy__insurer'],
+    }
     import importlib
     module_path, model_name = qs_map[report_type].rsplit('.', 1)
     module = importlib.import_module(module_path)
@@ -30,6 +37,8 @@ def _get_queryset(brokerage, report_type, date_from=None, date_to=None, status=N
         qs = qs.filter(created_at__date__lte=date_to)
     if status and hasattr(Model, 'status'):
         qs = qs.filter(status=status)
+    if report_type in select_related_map:
+        qs = qs.select_related(*select_related_map[report_type])
     return qs
 
 

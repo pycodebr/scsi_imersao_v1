@@ -67,6 +67,9 @@ class AgentDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
     template_name = 'partners/agent_detail.html'
     context_object_name = 'agent'
 
+    def get_queryset(self):
+        return super().get_queryset().select_related('user').prefetch_related('producers')
+
 
 class ProducerListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
     allowed_roles = ('owner', 'manager', 'broker', 'operational')
@@ -127,3 +130,6 @@ class ProducerDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
     model = Producer
     template_name = 'partners/producer_detail.html'
     context_object_name = 'producer'
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('agent', 'user')
