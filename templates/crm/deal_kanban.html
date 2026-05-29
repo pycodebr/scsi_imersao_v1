@@ -1,0 +1,88 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Kanban — CRM{% endblock %}
+{% block page_title %}Kanban{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="/">Início</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'crm:deal_list' %}">Negociações</a></li>
+    <li class="breadcrumb-item active">Kanban</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'crm:deal_list' %}" class="btn btn-outline-secondary btn-sm">Grid</a>
+{% endblock %}
+
+{% block content %}
+<div id="kanban-board" class="d-flex overflow-auto gap-3 pb-3">
+    <div class="text-center text-muted py-5 w-100" id="kanban-loading">Carregando...</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetch("{% url 'crm:deal_kanban_json' %}")
+        .then(r => r.json())
+        .then(pipelines => {
+            const board = document.getElementById('kanban-board');
+            document.getElementById('kanban-loading').remove();
+            if (!pipelines.length) {
+                board.innerHTML = '<p class="text-muted">Nenhum pipeline configurado.</p>';
+                return;
+            }
+            pipelines.forEach(pipeline => {
+                pipeline.stages.forEach(stage => {
+                    const col = document.createElement('div');
+                    col.className = 'card border-0 shadow-sm flex-shrink-0';
+                    col.style.minWidth = '280px';
+                    col.style.maxWidth = '320px';
+                    col.dataset.stageId = stage.id;
+                    col.innerHTML = `
+                        <div class="card-header py-2" style="background-color: ${stage.color}; color: #fff;">
+                            <small>${stage.name}</small>
+                            <span class="badge bg-light text-dark ms-1">${stage.deals.length}</span>
+                        </div>
+                        <div class="card-body p-2 kanban-stage" data-stage-id="${stage.id}" style="min-height: 60px;">
+                            ${stage.deals.map(d => `
+                                <div class="card mb-2 border" draggable="true" data-deal-id="${d.id}">
+                                    <div class="card-body p-2">
+                                        <a href="${d.url}" class="fw-semibold text-decoration-none" style="font-size: 0.85rem;">${d.title}</a>
+                                        <div class="mt-1"><small class="text-muted">R$ ${parseFloat(d.estimated_value).toFixed(2)}${d.client ? ' — ' + d.client : ''}</small></div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    board.appendChild(col);
+
+                    col.querySelectorAll('[draggable="true"]').forEach(card => {
+                        card.addEventListener('dragstart', e => {
+                            e.dataTransfer.setData('deal-id', card.dataset.dealId);
+                            card.classList.add('opacity-50');
+                        });
+                        card.addEventListener('dragend', () => card.classList.remove('opacity-50'));
+                    });
+
+                    const dropZone = col.querySelector('.kanban-stage');
+                    dropZone.addEventListener('dragover', e => e.preventDefault());
+                    dropZone.addEventListener('drop', e => {
+                        e.preventDefault();
+                        const dealId = e.dataTransfer.getData('deal-id');
+                        const stageId = dropZone.dataset.stageId;
+                        fetch(`/crm/negociacoes/${dealId}/move/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                            },
+                            body: JSON.stringify({stage_id: stageId}),
+                        }).then(r => {
+                            if (r.ok) location.reload();
+                        });
+                    });
+                });
+            });
+        });
+</script>
+{% endblock %}
