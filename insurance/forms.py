@@ -4,7 +4,7 @@ from django.forms import inlineformset_factory
 from clients.models import Client
 from insurers.models import Insurer, LineOfBusiness
 
-from .models import CoveredItem, Policy, Proposal
+from .models import CoveredItem, Endorsement, Policy, Proposal
 
 
 class ProposalForm(forms.ModelForm):
@@ -118,3 +118,49 @@ CoveredItemInlineFormSet = inlineformset_factory(
     can_delete=True,
     fields=('item_type', 'description', 'identifier', 'insured_amount', 'attributes', 'coverages'),
 )
+
+
+class EndorsementForm(forms.ModelForm):
+    class Meta:
+        model = Endorsement
+        fields = (
+            'policy',
+            'endorsement_number',
+            'type',
+            'description',
+            'premium_change',
+            'effective_date',
+            'status',
+        )
+        widgets = {
+            'policy': forms.Select(attrs={'class': 'form-control'}),
+            'endorsement_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'type': forms.Select(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'premium_change': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'effective_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.tenant = kwargs.pop('tenant', None)
+        super().__init__(*args, **kwargs)
+        if self.tenant:
+            self.fields['policy'].queryset = Policy.objects.filter(
+                brokerage=self.tenant,
+            ).order_by('-created_at')
+
+
+class EndorsementSearchForm(forms.Form):
+    type = forms.ChoiceField(
+        label='Tipo',
+        required=False,
+        choices=[('', 'Todos')] + Endorsement.Type.choices,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+    )
+    status = forms.ChoiceField(
+        label='Status',
+        required=False,
+        choices=[('', 'Todos')] + Endorsement.Status.choices,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+    )

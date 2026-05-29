@@ -270,3 +270,71 @@ class Policy(TenantAwareModel):
 
     def __str__(self):
         return self.policy_number
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('insurance:policy_detail', kwargs={'pk': self.pk})
+
+
+class Endorsement(TenantAwareModel):
+    """Endosso — alteração em apólice. Tipos: aumento, redução, cancelamento, alteração cadastral."""
+
+    class Type(models.TextChoices):
+        INCREASE = 'increase', 'Aumento'
+        DECREASE = 'decrease', 'Redução'
+        CANCELLATION = 'cancellation', 'Cancelamento'
+        DATA_CHANGE = 'data_change', 'Alteração Cadastral'
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'Pendente'
+        APPROVED = 'approved', 'Aprovado'
+        REJECTED = 'rejected', 'Rejeitado'
+
+    policy = models.ForeignKey(
+        Policy,
+        on_delete=models.CASCADE,
+        related_name='endorsements',
+        verbose_name='apólice',
+    )
+    endorsement_number = models.CharField('número do endosso', max_length=50)
+    type = models.CharField('tipo', max_length=20, choices=Type.choices)
+    description = models.TextField('descrição', blank=True)
+    premium_change = models.DecimalField(
+        'variação de prêmio',
+        max_digits=14,
+        decimal_places=2,
+        default=0,
+        help_text='Positivo para aumento, negativo para redução.',
+    )
+    effective_date = models.DateField('data de vigência')
+    status = models.CharField(
+        'status',
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+
+    class Meta:
+        ordering = ('-created_at',)
+        verbose_name = 'endosso'
+        verbose_name_plural = 'endossos'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['brokerage', 'policy', 'endorsement_number'],
+                name='unique_endorsement_number_per_policy',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.endorsement_number} — {self.get_type_display()}'
+
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new and self.type == self.Type.CANCELLATION and self.status == self.Status.APPROVED:
+            self.policy.status = Policy.Status.CANCELED
+            self.policy.save(update_fields=['status', 'updated_at'])
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('insurance:endorsement_detail', kwargs={'pk': self.pk})

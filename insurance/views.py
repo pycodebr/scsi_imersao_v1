@@ -10,13 +10,15 @@ from base.mixins import RoleRequiredMixin, TenantQuerysetMixin
 from documents.models import Document
 from .forms import (
     CoveredItemInlineFormSet,
+    EndorsementForm,
+    EndorsementSearchForm,
     GeneratePolicyForm,
     PolicyForm,
     PolicySearchForm,
     ProposalForm,
     ProposalSearchForm,
 )
-from .models import Policy, Proposal
+from .models import Endorsement, Policy, Proposal
 from .services import generate_policy_from_proposal
 
 
@@ -237,6 +239,7 @@ class PolicyDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
             brokerage=self.request.tenant,
         ).order_by('-created_at')
         ctx['active_tab'] = self.request.GET.get('tab', 'info')
+        ctx['endorsements'] = policy.endorsements.all().order_by('-created_at')
         return ctx
 
 
@@ -249,3 +252,73 @@ class PolicyItemsJsonView(TenantQuerysetMixin, View):
             for item in items
         ]
         return JsonResponse({'items': data})
+
+
+class EndorsementListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
+    allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
+    model = Endorsement
+    template_name = 'insurance/endorsement_list.html'
+    context_object_name = 'endorsements'
+    paginate_by = 20
+
+    def get_queryset(self):
+        qs = super().get_queryset().select_related('policy', 'policy__client')
+        params = self.request.GET
+        if params.get('type'):
+            qs = qs.filter(type=params['type'])
+        if params.get('status'):
+            qs = qs.filter(status=params['status'])
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['search_form'] = EndorsementSearchForm(self.request.GET or None)
+        return ctx
+
+
+class EndorsementCreateView(RoleRequiredMixin, TenantQuerysetMixin, CreateView):
+    allowed_roles = ('owner', 'manager', 'broker')
+    model = Endorsement
+    form_class = EndorsementForm
+    template_name = 'insurance/endorsement_form.html'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['tenant'] = self.request.tenant
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.brokerage = self.request.tenant
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('insurance:endorsement_detail', kwargs={'pk': self.object.pk})
+
+    def get_initial(self):
+        initial = super().get_initial()
+        policy_id = self.request.GET.get('policy_id')
+        if policy_id:
+            initial['policy'] = policy_id
+        return initial
+
+
+class EndorsementUpdateView(RoleRequiredMixin, TenantQuerysetMixin, UpdateView):
+    allowed_roles = ('owner', 'manager', 'broker')
+    model = Endorsement
+    form_class = EndorsementForm
+    template_name = 'insurance/endorsement_form.html'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['tenant'] = self.request.tenant
+        return kwargs
+
+    def get_success_url(self):
+        return reverse_lazy('insurance:endorsement_detail', kwargs={'pk': self.object.pk})
+
+
+class EndorsementDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
+    allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
+    model = Endorsement
+    template_name = 'insurance/endorsement_detail.html'
+    context_object_name = 'endorsement'

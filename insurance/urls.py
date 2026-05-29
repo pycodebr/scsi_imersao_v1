@@ -1,6 +1,10 @@
 from django.urls import path
 
 from .views import (
+    EndorsementCreateView,
+    EndorsementDetailView,
+    EndorsementListView,
+    EndorsementUpdateView,
     GeneratePolicyFromProposalView,
     PolicyCreateView,
     PolicyDetailView,
@@ -26,4 +30,8 @@ urlpatterns = [
     path('apolices/<int:pk>/', PolicyDetailView.as_view(), name='policy_detail'),
     path('apolices/<int:pk>/edit/', PolicyUpdateView.as_view(), name='policy_update'),
     path('apolices/<int:pk>/items-json/', PolicyItemsJsonView.as_view(), name='policy_items_json'),
+    path('endossos/', EndorsementListView.as_view(), name='endorsement_list'),
+    path('endossos/create/', EndorsementCreateView.as_view(), name='endorsement_create'),
+    path('endossos/<int:pk>/', EndorsementDetailView.as_view(), name='endorsement_detail'),
+    path('endossos/<int:pk>/edit/', EndorsementUpdateView.as_view(), name='endorsement_update'),
 ]
