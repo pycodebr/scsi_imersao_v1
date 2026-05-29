@@ -3159,51 +3159,51 @@ flowchart LR
 
 ### Sprint 26 — Documentação MKDocs
 **Objetivo:** documentação técnica.
-- [ ] Configurar MKDocs (Material) com suporte a Mermaid
-- [ ] Criar documentos obrigatórios (seção 41.2)
-- [ ] Diagramas de arquitetura/ER/fluxos em Mermaid
-- [ ] (Opcional) servir docs em container
+- [x] Configurar MKDocs (Material) com suporte a Mermaid
+- [x] Criar documentos obrigatórios (seção 41.2)
+- [x] Diagramas de arquitetura/ER/fluxos em Mermaid
+- [x] (Opcional) servir docs em container
 
 **Entrega:** documentação navegável com diagramas.
 
 ### Sprint 27 — Deploy com Docker Swarm
 **Objetivo:** produção.
-- [X] Preparar VPS Ubuntu (update, usuário, firewall, Docker)
-- [X] `docker swarm init` + rede `traefik-public`
-- [X] DNS Cloudflare para `scsi.digital`
-- [ ] `docker-stack.yml` com Traefik + app + db + rabbitmq + redis + worker + beat
-- [X] Deploy, `migrate`, `collectstatic`, `createsuperuser`
-- [X] Validar SSL (Let's Encrypt) e streaming SSE atrás do proxy
+- [x] Preparar VPS Ubuntu (update, usuário, firewall, Docker)
+- [x] `docker swarm init` + rede `traefik-public`
+- [x] DNS Cloudflare para `scsi.digital`
+- [x] `docker-stack.yml` com Traefik + app + db + rabbitmq + redis + worker + beat
+- [x] Deploy, `migrate`, `collectstatic`, `createsuperuser`
+- [x] Validar SSL (Let's Encrypt) e streaming SSE atrás do proxy
 
 **Entrega:** sistema em produção com TLS no domínio.
 
 ### Sprint 28 — Ajustes Finais
 **Objetivo:** estabilização e polimento.
-- [ ] Revisão de isolamento por tenant em todas as views (auditoria de `get_queryset`)
-- [ ] Otimização de queries (`select_related`/`prefetch_related`, índices)
-- [ ] Páginas 404/500 customizadas e mensagens de erro/sucesso
-- [ ] Modais de confirmação para ações destrutivas
-- [ ] Revisão final do Design System em todas as telas (responsivo)
-- [ ] Configurar backups (pg_dump + mídia) e logs/monitoramento
+- [x] Revisão de isolamento por tenant em todas as views (auditoria de `get_queryset`)
+- [x] Otimização de queries (`select_related`/`prefetch_related`, índices)
+- [x] Páginas 404/500 customizadas e mensagens de erro/sucesso
+- [x] Modais de confirmação para ações destrutivas
+- [x] Revisão final do Design System em todas as telas (responsivo)
+- [x] Configurar backups (pg_dump + mídia) e logs/monitoramento
 
 **Entrega:** sistema estável, seguro, responsivo e pronto para uso real.
 
 ### Sprint 29 — Comando de Seed de Dados de Demonstração
 **Objetivo:** popular a base com dados fake diversos para demonstrações e QA visual (F31, seção 46.1). Depende de todas as models de domínio existirem — executável após a Sprint 24; listada por último por ser ferramenta de apoio.
-- [ ] Adicionar `Faker` (locale `pt_BR`) ao `requirements.txt`
-- [ ] Criar `base/management/commands/seed_demo.py` com flags `--brokerages/--flush/--seed/--with-files/--force`
-- [ ] Guard de segurança: abortar se `DEBUG=False` sem `--force`
-- [ ] Criar N corretoras + planos/assinaturas + usuários em todos os roles
-- [ ] Seed de catálogos: seguradoras e ramos por corretora
-- [ ] Seed de parceiros: agentes e produtores (pessoa/empresa; produtor sob agente e direto)
-- [ ] Seed de clientes PF/PJ com `created_at` variados
-- [ ] Seed de propostas (todos os status) + itens cobertos (todos os tipos)
-- [ ] Seed de apólices (active/expired/canceled/renewed) com vigências variadas + comissões + repasses
-- [ ] Seed de sinistros (todos os status), endossos (todos os tipos) e renovações (a vencer/vencidas/renovadas/perdidas)
-- [ ] Seed de CRM: pipelines/etapas + deals em todas as etapas (open/won/lost) + `DealStageHistory`
-- [ ] Seed de notificações (lidas/não lidas), sessões/mensagens de chat e `ai_summary` fake (sem chamar OpenAI)
-- [ ] Sobrescrever `created_at` e datas de negócio cobrindo passado/presente/futuro; envolver em transação + `bulk_create`
-- [ ] Documentar uso em `docs/local-dev.md`
+- [x] Adicionar `Faker` (locale `pt_BR`) ao `requirements.txt`
+- [x] Criar `base/management/commands/seed_demo.py` com flags `--brokerages/--flush/--seed/--with-files/--force`
+- [x] Guard de segurança: abortar se `DEBUG=False` sem `--force`
+- [x] Criar N corretoras + planos/assinaturas + usuários em todos os roles
+- [x] Seed de catálogos: seguradoras e ramos por corretora
+- [x] Seed de parceiros: agentes e produtores (pessoa/empresa; produtor sob agente e direto)
+- [x] Seed de clientes PF/PJ com `created_at` variados
+- [x] Seed de propostas (todos os status) + itens cobertos (todos os tipos)
+- [x] Seed de apólices (active/expired/canceled/renewed) com vigências variadas + comissões + repasses
+- [x] Seed de sinistros (todos os status), endossos (todos os tipos) e renovações (a vencer/vencidas/renovadas/perdidas)
+- [x] Seed de CRM: pipelines/etapas + deals em todas as etapas (open/won/lost) + `DealStageHistory`
+- [x] Seed de notificações (lidas/não lidas), sessões/mensagens de chat e `ai_summary` fake (sem chamar OpenAI)
+- [x] Sobrescrever `created_at` e datas de negócio cobrindo passado/presente/futuro; envolver em transação + `bulk_create`
+- [x] Documentar uso em `docs/local-dev.md`
 
 **Entrega:** `python manage.py seed_demo` gera um ambiente de demonstração rico, isolado por tenant e com cenários diversos em todas as entidades.
 
