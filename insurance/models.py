@@ -153,6 +153,13 @@ class CoveredItem(TenantAwareModel):
         ordering = ('-created_at',)
         verbose_name = 'item coberto'
         verbose_name_plural = 'itens cobertos'
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(proposal__isnull=False, policy__isnull=True)
+                | models.Q(proposal__isnull=True, policy__isnull=False),
+                name='covered_item_exactly_one_parent',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.get_item_type_display()} — {self.description}'

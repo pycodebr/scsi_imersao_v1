@@ -89,8 +89,8 @@ class CoveredItemForm(forms.ModelForm):
             'description': forms.TextInput(attrs={'class': 'form-control'}),
             'identifier': forms.TextInput(attrs={'class': 'form-control'}),
             'insured_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'attributes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
-            'coverages': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'attributes': forms.HiddenInput(),
+            'coverages': forms.HiddenInput(),
         }
 
 

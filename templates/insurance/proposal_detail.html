@@ -80,6 +80,8 @@
                                 <th>Descrição</th>
                                 <th>Identificador</th>
                                 <th>Importância segurada</th>
+                                <th>Atributos</th>
+                                <th>Coberturas</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -89,6 +91,16 @@
                                 <td>{{ item.description }}</td>
                                 <td>{{ item.identifier|default:"—" }}</td>
                                 <td>R$ {{ item.insured_amount|floatformat:2 }}</td>
+                                <td>
+                                    {% if item.attributes %}
+                                    <small class="text-muted">{% for k, v in item.attributes.items %}{{ k }}: {{ v }}{% if not forloop.last %}, {% endif %}{% endfor %}</small>
+                                    {% else %}—{% endif %}
+                                </td>
+                                <td>
+                                    {% if item.coverages %}
+                                    <small class="text-muted">{{ item.coverages|join:", " }}</small>
+                                    {% else %}—{% endif %}
+                                </td>
                             </tr>
                         {% endfor %}
                         </tbody>
