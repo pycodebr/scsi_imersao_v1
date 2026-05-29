@@ -72,3 +72,18 @@ class ClaimDetailView(TenantQuerysetMixin, LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         return super().get_queryset().select_related('policy', 'covered_item', 'policy__client', 'policy__insurer')
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        from django.contrib.contenttypes.models import ContentType
+        from documents.models import Document
+        claim = self.object
+        claim_ct = ContentType.objects.get_for_model(Claim)
+        ctx['content_type_id'] = claim_ct.pk
+        ctx['documents'] = Document.objects.filter(
+            content_type_id=claim_ct.pk,
+            object_id=claim.pk,
+            brokerage=self.request.tenant,
+        ).order_by('-created_at')
+        ctx['active_tab'] = self.request.GET.get('tab', 'info')
+        return ctx

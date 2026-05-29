@@ -13,6 +13,11 @@ ALLOWED_MIME_TYPES = (
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'text/plain',
+    'text/markdown',
+    'video/mp4',
+    'video/quicktime',
+    'video/x-msvideo',
+    'video/avi',
 )
 
 MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB

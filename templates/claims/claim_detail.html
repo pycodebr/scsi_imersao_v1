@@ -51,7 +51,7 @@
                     </div>
                     <div class="col-md-3 mb-3">
                         <small class="text-muted d-block">Status</small>
-                        <span class="badge {{ claim.status|slugify }}">{{ claim.get_status_display }}</span>
+                        <span class="badge bg-{% if claim.status == 'opened' %}danger{% elif claim.status == 'under_analysis' %}warning{% elif claim.status == 'approved' %}success{% elif claim.status == 'paid' %}info{% elif claim.status == 'closed' %}secondary{% else %}dark{% endif %}">{{ claim.get_status_display }}</span>
                     </div>
                 </div>
                 {% if claim.description %}
@@ -66,7 +66,7 @@
     </div>
 
     <div class="col-lg-4">
-        {% include "partials/_document_attachments.html" with object=claim %}
+        {% include "documents/document_attachments.html" with content_type_id=content_type_id object_id=claim.pk documents=documents %}
     </div>
 </div>
 {% endblock %}
