@@ -2814,13 +2814,22 @@ flowchart LR
 
 ### Sprint 2 — Docker Local
 **Objetivo:** ambiente de desenvolvimento containerizado.
-- [ ] Criar `Dockerfile` (Python 3.13-slim) e `entrypoint.sh`
-- [ ] Criar `docker-compose.yml` com `app`, `db` (postgres:16), `rabbitmq`, `redis`
-- [ ] Adicionar serviços `celery_worker` e `celery_beat`
-- [ ] Volumes persistentes (`pg_data`, `media_data`)
-- [ ] Validar `docker compose up` e conexão ao Postgres
+- [X] Criar `Dockerfile` (Python 3.13-slim) e `entrypoint.sh`
+- [X] Criar `docker-compose.yml` com `app`, `db` (postgres:16), `rabbitmq`, `redis`
+- [X] Adicionar serviços `celery_worker` e `celery_beat`
+- [X] Volumes persistentes (`pg_data`, `media_data`)
+- [X] Validar `docker compose up` e conexão ao Postgres
 
 **Entrega:** `docker compose up` sobe app + banco + broker + worker/beat.
+
+> **Decisões da execução da Sprint 2 (resolvendo ambiguidades):**
+> - **Driver Postgres:** adicionado `psycopg[binary]` ao `requirements.txt` (necessário para a conexão ao Postgres — deliverable da sprint).
+> - **`entrypoint.sh`:** roda `migrate --noinput` + `collectstatic --noinput` e finaliza com `exec "$@"` (o `command:` de cada serviço é o processo final). Corrigido o bug de aspas do `ENTRYPOINT` da referência (§43.3): usado exec-form com aspas duplas `["./entrypoint.sh"]`. **O bit executável precisa estar no arquivo do host** (`chmod +x entrypoint.sh`) porque o bind-mount `.:/app` sobrepõe o `chmod` da imagem.
+> - **Healthcheck no `db`:** adicionado `pg_isready` + `depends_on: condition: service_healthy` no `app`/`celery_worker`/`celery_beat`, garantindo que a app só sobe após o Postgres aceitar conexões (robustez do deliverable "conexão ao Postgres").
+> - **`.env` Docker-ready:** o `.env` passou a apontar `DATABASE_URL`/`CELERY_*`/`REDIS_URL` para os serviços do Compose (`db`, `rabbitmq`, `redis`). Para rodar o Django no host sem Docker, basta comentar `DATABASE_URL` (o settings cai no SQLite padrão).
+> - **`.dockerignore`:** criado para enxugar o build (exclui `.venv`, `.git`, `db.sqlite3`, `media/`, `design_system/refs/`).
+> - **`celery_worker`/`celery_beat`:** os serviços estão **definidos** no Compose, porém só sobem por completo após a **Sprint 3** (que cria `core/celery.py` e instala `celery`/`django-celery-beat`). Validação ao vivo cobriu `app` + `db` + `rabbitmq` + `redis` (app respondendo HTTP 200; migrações aplicadas e tabelas criadas no Postgres); worker/beat não foram iniciados por dependerem do bootstrap do Celery.
+> - **Imagem base:** `python:3.13-slim` conforme §43.3 (o host usa Python 3.14, mas o container fixa 3.13+ como manda o PRD).
 
 ### Sprint 3 — Configuração Django Base + Design System + Celery Bootstrap
 **Objetivo:** base de templates e bootstrap do Celery.
