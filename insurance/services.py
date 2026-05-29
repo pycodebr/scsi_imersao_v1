@@ -33,6 +33,8 @@ def generate_policy_from_proposal(proposal_pk, policy_number):
         start_date=proposal.proposed_start_date,
         end_date=proposal.proposed_end_date,
         payment_info=proposal.payment_terms,
+        producer=proposal.producer,
+        agent=proposal.agent,
     )
 
     proposal_items = CoveredItem.objects.filter(proposal=proposal)
@@ -50,5 +52,11 @@ def generate_policy_from_proposal(proposal_pk, policy_number):
 
     proposal.status = Proposal.Status.CONVERTED
     proposal.save(update_fields=['status', 'updated_at'])
+
+    from commissions.services import create_commission_from_policy
+    try:
+        create_commission_from_policy(policy)
+    except Exception:
+        pass
 
     return policy

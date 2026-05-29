@@ -1,0 +1,80 @@
+{% extends 'base_app.html' %}
+
+{% block title %}Comissão {{ commission.pk }} — SCSI{% endblock %}
+{% block page_title %}Comissão #{{ commission.pk }}{% endblock %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="/">Início</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'commissions:commission_list' %}">Comissões</a></li>
+    <li class="breadcrumb-item active">#{{ commission.pk }}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-3">Dados da Comissão</h5>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <small class="text-muted d-block">Apólice</small>
+                        <a href="{{ commission.policy.get_absolute_url }}">{{ commission.policy.policy_number }}</a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <small class="text-muted d-block">Prêmio Base</small>
+                        R$ {{ commission.base_premium|floatformat:2 }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <small class="text-muted d-block">Taxa da Seguradora</small>
+                        {{ commission.insurer_rate }}%
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <small class="text-muted d-block">Valor Corretora</small>
+                        R$ {{ commission.insurer_amount|floatformat:2 }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <small class="text-muted d-block">Data Referência</small>
+                        {{ commission.reference_date|date:"d/m/Y"|default:"—" }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <small class="text-muted d-block">Status</small>
+                        <span class="badge {{ commission.status|slugify }}">{{ commission.get_status_display }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if commission.splits.exists %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-3">Repasses</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Beneficiário</th>
+                                <th>Taxa (%)</th>
+                                <th>Valor</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for split in commission.splits.all %}
+                            <tr>
+                                <td>{{ split.get_beneficiary_type_display }}</td>
+                                <td>{{ split.agent.name|default:split.producer.name|default:"—" }}</td>
+                                <td>{{ split.rate }}%</td>
+                                <td>R$ {{ split.amount|floatformat:2 }}</td>
+                                <td><span class="badge {{ split.status|slugify }}">{{ split.get_status_display }}</span></td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

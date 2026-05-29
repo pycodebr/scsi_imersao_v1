@@ -27,4 +27,5 @@ urlpatterns = [
     path('', include('insurance.urls')),
     path('sinistros/', include('claims.urls')),
     path('parceiros/', include('partners.urls')),
+    path('comissoes/', include('commissions.urls')),
 ]

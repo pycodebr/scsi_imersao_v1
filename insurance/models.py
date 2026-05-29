@@ -43,6 +43,22 @@ class Proposal(TenantAwareModel):
         related_name='proposals',
         verbose_name='ramo',
     )
+    producer = models.ForeignKey(
+        'partners.Producer',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='proposals',
+        verbose_name='produtor',
+    )
+    agent = models.ForeignKey(
+        'partners.Agent',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='proposals',
+        verbose_name='agente',
+    )
     number = models.CharField('número', max_length=50)
     status = models.CharField(
         'status',
@@ -247,6 +263,22 @@ class Policy(TenantAwareModel):
     start_date = models.DateField('início vigência', null=True, blank=True)
     end_date = models.DateField('fim vigência', null=True, blank=True)
     payment_info = models.CharField('informações de pagamento', max_length=300, blank=True)
+    producer = models.ForeignKey(
+        'partners.Producer',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='policies',
+        verbose_name='produtor',
+    )
+    agent = models.ForeignKey(
+        'partners.Agent',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='policies',
+        verbose_name='agente',
+    )
 
     ai_summary = models.TextField('resumo IA', blank=True, default='')
     ai_summary_status = models.CharField(

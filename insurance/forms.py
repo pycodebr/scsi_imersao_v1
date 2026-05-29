@@ -3,6 +3,7 @@ from django.forms import inlineformset_factory
 
 from clients.models import Client
 from insurers.models import Insurer, LineOfBusiness
+from partners.models import Agent, Producer
 
 from .models import CoveredItem, Endorsement, Policy, Proposal
 
@@ -11,8 +12,8 @@ class ProposalForm(forms.ModelForm):
     class Meta:
         model = Proposal
         fields = (
-            'client', 'insurer', 'line_of_business', 'number',
-            'status', 'net_premium', 'total_premium', 'iof',
+            'client', 'insurer', 'line_of_business', 'producer', 'agent',
+            'number', 'status', 'net_premium', 'total_premium', 'iof',
             'proposed_start_date', 'proposed_end_date',
             'payment_terms', 'notes',
         )
@@ -20,6 +21,8 @@ class ProposalForm(forms.ModelForm):
             'client': forms.Select(attrs={'class': 'form-control'}),
             'insurer': forms.Select(attrs={'class': 'form-control'}),
             'line_of_business': forms.Select(attrs={'class': 'form-control'}),
+            'producer': forms.Select(attrs={'class': 'form-control'}),
+            'agent': forms.Select(attrs={'class': 'form-control'}),
             'number': forms.TextInput(attrs={'class': 'form-control'}),
             'status': forms.Select(attrs={'class': 'form-control'}),
             'net_premium': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
@@ -38,6 +41,8 @@ class ProposalForm(forms.ModelForm):
             self.fields['client'].queryset = Client.objects.filter(brokerage=self.tenant, is_active=True)
             self.fields['insurer'].queryset = Insurer.objects.filter(brokerage=self.tenant, is_active=True)
             self.fields['line_of_business'].queryset = LineOfBusiness.objects.filter(brokerage=self.tenant, is_active=True)
+            self.fields['producer'].queryset = Producer.objects.filter(brokerage=self.tenant, is_active=True)
+            self.fields['agent'].queryset = Agent.objects.filter(brokerage=self.tenant, is_active=True)
 
 
 class PolicyForm(forms.ModelForm):
@@ -45,6 +50,7 @@ class PolicyForm(forms.ModelForm):
         model = Policy
         fields = (
             'policy_number', 'client', 'insurer', 'line_of_business',
+            'producer', 'agent',
             'status', 'net_premium', 'total_premium', 'iof',
             'commission_rate', 'start_date', 'end_date', 'payment_info',
         )
@@ -53,6 +59,8 @@ class PolicyForm(forms.ModelForm):
             'client': forms.Select(attrs={'class': 'form-control'}),
             'insurer': forms.Select(attrs={'class': 'form-control'}),
             'line_of_business': forms.Select(attrs={'class': 'form-control'}),
+            'producer': forms.Select(attrs={'class': 'form-control'}),
+            'agent': forms.Select(attrs={'class': 'form-control'}),
             'status': forms.Select(attrs={'class': 'form-control'}),
             'net_premium': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'total_premium': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
@@ -70,6 +78,8 @@ class PolicyForm(forms.ModelForm):
             self.fields['client'].queryset = Client.objects.filter(brokerage=self.tenant, is_active=True)
             self.fields['insurer'].queryset = Insurer.objects.filter(brokerage=self.tenant, is_active=True)
             self.fields['line_of_business'].queryset = LineOfBusiness.objects.filter(brokerage=self.tenant, is_active=True)
+            self.fields['producer'].queryset = Producer.objects.filter(brokerage=self.tenant, is_active=True)
+            self.fields['agent'].queryset = Agent.objects.filter(brokerage=self.tenant, is_active=True)
 
 
 class GeneratePolicyForm(forms.Form):
