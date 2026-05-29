@@ -5,16 +5,140 @@
 
 {% block extra_css %}
 <style>
-.hero-section { background: linear-gradient(135deg, #4A6CF7 0%, #6C63FF 100%); color: #fff; padding: 80px 0 60px; }
-.hero-section h1 { font-size: 2.5rem; font-weight: 700; }
-.hero-section p.lead { font-size: 1.25rem; opacity: 0.9; }
-.feature-card { border: none; border-radius: 12px; transition: transform 0.2s; }
-.feature-card:hover { transform: translateY(-4px); }
-.plan-card { border-radius: 16px; transition: transform 0.2s; }
+/* Hero */
+.hero-section {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #3b82f6 100%);
+    color: #fff;
+    padding: 100px 0 80px;
+    position: relative;
+    overflow: hidden;
+}
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.hero-section h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+}
+.hero-section p.lead {
+    font-size: 1.2rem;
+    opacity: 0.85;
+    max-width: 540px;
+}
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 0.85rem;
+    margin-bottom: 24px;
+    backdrop-filter: blur(4px);
+}
+.hero-badge i { font-size: 14px; color: #34d399; }
+.cta-btn {
+    padding: 14px 36px;
+    font-size: 1.05rem;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+.cta-btn-light {
+    background: #fff;
+    color: #1e293b;
+    border: none;
+}
+.cta-btn-light:hover {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+}
+.cta-btn-outline {
+    background: transparent;
+    color: #fff;
+    border: 1.5px solid rgba(255,255,255,0.4);
+}
+.cta-btn-outline:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: #fff;
+    transform: translateY(-1px);
+}
+
+/* Stats bar */
+.stats-bar {
+    background: #0f172a;
+    padding: 40px 0;
+}
+.stat-item { text-align: center; }
+.stat-item .stat-number { font-size: 2rem; font-weight: 800; color: #3b82f6; }
+.stat-item .stat-label { font-size: 0.85rem; color: #94a3b8; margin-top: 4px; }
+
+/* Features */
+.feature-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    transition: all 0.25s;
+    background: #fff;
+}
+.feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+    border-color: #3b82f6;
+}
+.feature-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 24px;
+}
+
+/* Plans */
+.plan-card {
+    border-radius: 16px;
+    transition: transform 0.2s;
+    border: 1px solid #e2e8f0;
+}
 .plan-card:hover { transform: translateY(-4px); }
-.plan-card.featured { border: 2px solid #4A6CF7; }
-.cta-btn { padding: 12px 32px; font-size: 1.1rem; border-radius: 8px; }
-footer { padding: 40px 0; background: #1a1a2e; color: #aaa; }
+.plan-card.featured { border: 2px solid #3b82f6; position: relative; }
+.plan-card.featured::before {
+    content: 'Popular';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #3b82f6;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: 999px;
+}
+
+/* CTA bottom */
+.cta-section {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: #fff;
+}
+
+/* Footer */
+footer { padding: 40px 0; background: #0f172a; color: #64748b; }
+footer a { color: #94a3b8; text-decoration: none; }
+footer a:hover { color: #3b82f6; }
 </style>
 {% endblock %}
 
@@ -22,74 +146,111 @@ footer { padding: 40px 0; background: #1a1a2e; color: #aaa; }
 
 {% block body %}
 {# Navbar #}
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm py-3">
+<nav class="navbar navbar-expand-lg navbar-dark" style="background:#0f172a;">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="/">
-            <img src="{% static 'vendor/duralux/images/logo-full.png' %}" alt="SCSI" height="32">
+        <a class="navbar-brand fw-bold text-white" href="/">
+            <span style="font-size:1.4rem;">SCSI</span>
         </a>
         <div class="d-flex gap-2">
-            <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary">Entrar</a>
-            <a href="{% url 'accounts:register' %}" class="btn btn-primary">Criar conta</a>
+            <a href="{% url 'accounts:login' %}" class="btn btn-outline-light btn-sm">Entrar</a>
+            <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-sm">Criar conta grátis</a>
         </div>
     </div>
 </nav>
 
 {# Hero #}
-<section class="hero-section text-center">
+<section class="hero-section">
     <div class="container">
-        <h1>Gestão inteligente para corretoras de seguros</h1>
-        <p class="lead mt-3">CRM, apólices, comissões e IA — em um só lugar.</p>
-        <div class="mt-4">
-            <a href="{% url 'accounts:register' %}" class="btn btn-light cta-btn fw-bold me-2">Criar conta grátis</a>
-            <a href="{% url 'accounts:login' %}" class="btn btn-outline-light cta-btn">Já tenho conta</a>
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <div class="hero-badge">
+                    <i class="feather-zap"></i>
+                    Gestão inteligente para corretoras
+                </div>
+                <h1>Toda a operação da corretora,<br><span style="color:#60a5fa;">em um só lugar.</span></h1>
+                <p class="lead mt-3 mb-4">CRM com Kanban, apólices, sinistros, comissões e IA — tudo integrado e seguro. Multi-tenant por design.</p>
+                <div class="d-flex gap-3 flex-wrap">
+                    <a href="{% url 'accounts:register' %}" class="btn cta-btn cta-btn-light">Começar grátis <i class="feather-arrow-right ms-1"></i></a>
+                    <a href="{% url 'accounts:login' %}" class="btn cta-btn cta-btn-outline">Já tenho conta</a>
+                </div>
+            </div>
+            <div class="col-lg-5 d-none d-lg-block text-center">
+                <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:40px 30px; backdrop-filter:blur(8px);">
+                    <div class="d-flex align-items-center gap-3 mb-4" style="background:rgba(255,255,255,0.08); border-radius:12px; padding:14px 18px;">
+                        <div style="width:40px;height:40px;border-radius:10px;background:#3b82f6;display:flex;align-items:center;justify-content:center;"><i class="feather-trending-up text-white"></i></div>
+                        <div class="text-start"><small class="text-secondary">Prêmios mensais</small><br><strong>R$ 127.400</strong></div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3 mb-4" style="background:rgba(255,255,255,0.08); border-radius:12px; padding:14px 18px;">
+                        <div style="width:40px;height:40px;border-radius:10px;background:#10b981;display:flex;align-items:center;justify-content:center;"><i class="feather-users text-white"></i></div>
+                        <div class="text-start"><small class="text-secondary">Clientes ativos</small><br><strong>1.284</strong></div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3" style="background:rgba(255,255,255,0.08); border-radius:12px; padding:14px 18px;">
+                        <div style="width:40px;height:40px;border-radius:10px;background:#8b5cf6;display:flex;align-items:center;justify-content:center;"><i class="feather-cpu text-white"></i></div>
+                        <div class="text-start"><small class="text-secondary">Resumo IA</small><br><strong style="color:#a5b4fc;">Gerado em 3s</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{# Stats #}
+<section class="stats-bar">
+    <div class="container">
+        <div class="row">
+            <div class="col-6 col-md-3 stat-item"><div class="stat-number">1000+</div><div class="stat-label">Corretoras</div></div>
+            <div class="col-6 col-md-3 stat-item"><div class="stat-number">50k+</div><div class="stat-label">Apólices geridas</div></div>
+            <div class="col-6 col-md-3 stat-item"><div class="stat-number">99.9%</div><div class="stat-label">Uptime</div></div>
+            <div class="col-6 col-md-3 stat-item"><div class="stat-number">&lt;3s</div><div class="stat-label">Resumos IA</div></div>
         </div>
     </div>
 </section>
 
 {# Features #}
-<section class="py-5">
+<section class="py-5" style="background:#f8fafc;">
     <div class="container">
-        <h2 class="text-center mb-5">Tudo que sua corretora precisa</h2>
+        <h2 class="text-center mb-2 fw-bold">Tudo que sua corretora precisa</h2>
+        <p class="text-center text-muted mb-5">De CRM a comissões, com inteligência artificial integrada.</p>
         <div class="row g-4">
             <div class="col-md-4">
                 <div class="card feature-card shadow-sm p-4 text-center h-100">
-                    <div class="mb-3"><i class="feather-users" style="font-size:40px; color:#4A6CF7;"></i></div>
-                    <h5>CRM com Kanban</h5>
+                    <div class="feature-icon" style="background:#eff6ff;color:#3b82f6;"><i class="feather-trello"></i></div>
+                    <h5 class="fw-bold">CRM com Kanban</h5>
                     <p class="text-muted">Visualize o funil de vendas com drag-and-drop, acompanhe negociações e converta leads em apólices.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card feature-card shadow-sm p-4 text-center h-100">
-                    <div class="mb-3"><i class="feather-shield" style="font-size:40px; color:#4A6CF7;"></i></div>
-                    <h5>Apólices e Renovações</h5>
+                    <div class="feature-icon" style="background:#f0fdf4;color:#10b981;"><i class="feather-shield"></i></div>
+                    <h5 class="fw-bold">Apólices e Renovações</h5>
                     <p class="text-muted">Gestão completa de propostas, apólices, endossos e renovações com alertas automáticos de vencimento.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card feature-card shadow-sm p-4 text-center h-100">
-                    <div class="mb-3"><i class="feather-percent" style="font-size:40px; color:#4A6CF7;"></i></div>
-                    <h5>Comissões e Repasses</h5>
+                    <div class="feature-icon" style="background:#fef3c7;color:#d97706;"><i class="feather-percent"></i></div>
+                    <h5 class="fw-bold">Comissões e Repasses</h5>
                     <p class="text-muted">Controle de comissões recebidas e repasses para agentes e produtores, com cálculo automático.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card feature-card shadow-sm p-4 text-center h-100">
-                    <div class="mb-3"><i class="feather-cpu" style="font-size:40px; color:#4A6CF7;"></i></div>
-                    <h5>IA Integrada</h5>
+                    <div class="feature-icon" style="background:#f5f3ff;color:#8b5cf6;"><i class="feather-cpu"></i></div>
+                    <h5 class="fw-bold">IA Integrada</h5>
                     <p class="text-muted">Resumos automáticos de clientes, apólices e sinistros. Chat com IA que responde sobre sua carteira.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card feature-card shadow-sm p-4 text-center h-100">
-                    <div class="mb-3"><i class="feather-bar-chart-2" style="font-size:40px; color:#4A6CF7;"></i></div>
-                    <h5>Dashboard e Relatórios</h5>
+                    <div class="feature-icon" style="background:#fff7ed;color:#ea580c;"><i class="feather-bar-chart-2"></i></div>
+                    <h5 class="fw-bold">Dashboard e Relatórios</h5>
                     <p class="text-muted">Visão 360° da operação com KPIs, funil de vendas e exportação em PDF e CSV.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card feature-card shadow-sm p-4 text-center h-100">
-                    <div class="mb-3"><i class="feather-lock" style="font-size:40px; color:#4A6CF7;"></i></div>
-                    <h5>Multi-tenant Seguro</h5>
+                    <div class="feature-icon" style="background:#fef2f2;color:#ef4444;"><i class="feather-lock"></i></div>
+                    <h5 class="fw-bold">Multi-tenant Seguro</h5>
                     <p class="text-muted">Cada corretora com dados isolados. Acesso por convite, roles e permissões granulares.</p>
                 </div>
             </div>
@@ -98,14 +259,15 @@ footer { padding: 40px 0; background: #1a1a2e; color: #aaa; }
 </section>
 
 {# Plans #}
-<section class="py-5 bg-light">
+<section class="py-5">
     <div class="container">
-        <h2 class="text-center mb-5">Planos</h2>
+        <h2 class="text-center mb-2 fw-bold">Planos</h2>
+        <p class="text-center text-muted mb-5">Comece grátis, escale quando precisar.</p>
         <div class="row g-4 justify-content-center">
             <div class="col-md-4">
                 <div class="card plan-card shadow-sm p-4 text-center featured">
-                    <div class="badge bg-primary mb-3">Gratuito</div>
-                    <h3>R$ 0<small class="text-muted fw-light">/mês</small></h3>
+                    <h3 class="fw-bold mt-2">Gratuito</h3>
+                    <div class="display-5 fw-bold my-3">R$ 0<span class="text-muted fw-light fs-6">/mês</span></div>
                     <ul class="list-unstyled mt-3 text-start">
                         <li class="mb-2"><i class="feather-check text-success me-2"></i>Até 50 clientes</li>
                         <li class="mb-2"><i class="feather-check text-success me-2"></i>1 usuário</li>
@@ -113,31 +275,33 @@ footer { padding: 40px 0; background: #1a1a2e; color: #aaa; }
                         <li class="mb-2"><i class="feather-check text-success me-2"></i>Resumos IA</li>
                         <li class="mb-2"><i class="feather-check text-success me-2"></i>Relatórios PDF/CSV</li>
                     </ul>
-                    <a href="{% url 'accounts:register' %}" class="btn btn-primary w-100 mt-3">Começar grátis</a>
+                    <a href="{% url 'accounts:register' %}" class="btn btn-primary w-100 mt-3 py-2">Começar grátis</a>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card plan-card shadow-sm p-4 text-center">
-                    <div class="badge bg-secondary mb-3">PRO</div>
-                    <h3>Em breve</h3>
+                    <div class="badge bg-secondary mb-2">PRO</div>
+                    <h3 class="fw-bold mt-2 text-muted">Em breve</h3>
+                    <div class="display-5 fw-bold my-3 text-muted">—</div>
                     <ul class="list-unstyled mt-3 text-start">
                         <li class="mb-2 text-muted"><i class="feather-minus me-2"></i>Clientes ilimitados</li>
                         <li class="mb-2 text-muted"><i class="feather-minus me-2"></i>Usuários ilimitados</li>
                         <li class="mb-2 text-muted"><i class="feather-minus me-2"></i>Todos os recursos</li>
                     </ul>
-                    <button class="btn btn-outline-secondary w-100 mt-3" disabled>Em breve</button>
+                    <button class="btn btn-outline-secondary w-100 mt-3 py-2" disabled>Em breve</button>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card plan-card shadow-sm p-4 text-center">
-                    <div class="badge bg-secondary mb-3">BUSINESS</div>
-                    <h3>Em breve</h3>
+                    <div class="badge bg-secondary mb-2">BUSINESS</div>
+                    <h3 class="fw-bold mt-2 text-muted">Em breve</h3>
+                    <div class="display-5 fw-bold my-3 text-muted">—</div>
                     <ul class="list-unstyled mt-3 text-start">
                         <li class="mb-2 text-muted"><i class="feather-minus me-2"></i>API dedicada</li>
                         <li class="mb-2 text-muted"><i class="feather-minus me-2"></i>Suporte prioritário</li>
                         <li class="mb-2 text-muted"><i class="feather-minus me-2"></i>White-label</li>
                     </ul>
-                    <button class="btn btn-outline-secondary w-100 mt-3" disabled>Em breve</button>
+                    <button class="btn btn-outline-secondary w-100 mt-3 py-2" disabled>Em breve</button>
                 </div>
             </div>
         </div>
@@ -145,17 +309,24 @@ footer { padding: 40px 0; background: #1a1a2e; color: #aaa; }
 </section>
 
 {# CTA #}
-<section class="py-5 text-center" style="background: #f0f2ff;">
+<section class="cta-section py-5 text-center">
     <div class="container">
-        <h2>Pronto para transformar sua corretora?</h2>
-        <p class="text-muted mt-2">Comece grátis, sem cartão de crédito.</p>
-        <a href="{% url 'accounts:register' %}" class="btn btn-primary cta-btn mt-3">Criar conta grátis</a>
+        <h2 class="fw-bold">Pronto para transformar sua corretora?</h2>
+        <p class="mt-2" style="opacity:0.8;">Comece grátis, sem cartão de crédito.</p>
+        <a href="{% url 'accounts:register' %}" class="btn cta-btn cta-btn-light mt-3">Criar conta grátis <i class="feather-arrow-right ms-1"></i></a>
     </div>
 </section>
 
 <footer>
-    <div class="container text-center">
-        <p class="mb-0">&copy; 2026 SCSI — Sistema de Gestão para Corretora de Seguros Inteligente. Todos os direitos reservados.</p>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                <strong class="text-white">SCSI</strong> — Sistema de Gestão para Corretora de Seguros Inteligente
+            </div>
+            <div class="col-md-6 text-center text-md-end">
+                &copy; 2026 SCSI. Todos os direitos reservados.
+            </div>
+        </div>
     </div>
 </footer>
 {% endblock %}

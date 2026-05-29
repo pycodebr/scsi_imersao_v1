@@ -11,5 +11,6 @@ urlpatterns = [
     path('chat/<int:pk>/', views.ChatSessionListView.as_view(), name='chat_session'),
     path('chat/<int:pk>/rename/', views.ChatSessionRenameView.as_view(), name='chat_session_rename'),
     path('chat/<int:pk>/delete/', views.ChatSessionDeleteView.as_view(), name='chat_session_delete'),
+    path('chat/<int:pk>/export/', views.ChatSessionExportView.as_view(), name='chat_session_export'),
     path('chat/<int:pk>/send/', views.ChatMessageSendView.as_view(), name='chat_message_send'),
 ]

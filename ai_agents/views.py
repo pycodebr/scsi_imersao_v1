@@ -2,10 +2,11 @@ import json
 import logging
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse, StreamingHttpResponse
+from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.views import View
 from django.views.generic import ListView
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 
@@ -111,9 +112,9 @@ class ChatSessionListView(RoleRequiredMixin, TenantQuerysetMixin, ListView):
             active_session = ctx['sessions'].first()
         ctx['active_session'] = active_session
         if active_session:
-            ctx['messages'] = ChatMessage.objects.filter(session=active_session).order_by('created_at')
+            ctx['chat_messages'] = ChatMessage.objects.filter(session=active_session).order_by('created_at')
         else:
-            ctx['messages'] = ChatMessage.objects.none()
+            ctx['chat_messages'] = ChatMessage.objects.none()
         return ctx
 
 
@@ -156,6 +157,37 @@ class ChatSessionDeleteView(RoleRequiredMixin, View):
         )
         session.delete()
         return JsonResponse({'ok': True})
+
+
+class ChatSessionExportView(RoleRequiredMixin, View):
+    allowed_roles = ('owner', 'manager', 'broker', 'agent', 'producer', 'operational')
+
+    def get(self, request, pk):
+        session = get_object_or_404(
+            ChatSession, pk=pk, brokerage=request.tenant, user=request.user
+        )
+        messages = ChatMessage.objects.filter(session=session).order_by('created_at')
+        lines = [
+            f'# {session.title}',
+            f'',
+            f'> Exportado em {timezone.now().strftime("%d/%m/%Y %H:%M")}',
+            f'',
+            f'---',
+            f'',
+        ]
+        role_label = {'user': '**Você**', 'assistant': '**Assistente**', 'system': '**Sistema**'}
+        for msg in messages:
+            label = role_label.get(msg.role, msg.role)
+            lines.append(f'{label}:')
+            lines.append(f'')
+            lines.append(msg.content)
+            lines.append(f'')
+            lines.append(f'---')
+            lines.append(f'')
+        filename = f'chat-{session.pk}-{session.title[:30].replace(" ", "-")}.md'
+        response = HttpResponse('\n'.join(lines), content_type='text/markdown; charset=utf-8')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
 
 
 class ChatMessageSendView(RoleRequiredMixin, View):

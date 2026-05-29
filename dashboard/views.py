@@ -45,11 +45,11 @@ class DashboardView(RoleRequiredMixin, TemplateView):
 
         ctx['total_commission_received'] = Commission.objects.filter(
             brokerage=brokerage, status='received'
-        ).aggregate(total=Sum('amount'))['total'] or 0
+        ).aggregate(total=Sum('insurer_amount'))['total'] or 0
 
         ctx['total_commission_pending'] = Commission.objects.filter(
             brokerage=brokerage, status='pending'
-        ).aggregate(total=Sum('amount'))['total'] or 0
+        ).aggregate(total=Sum('insurer_amount'))['total'] or 0
 
         pipeline = Pipeline.objects.filter(brokerage=brokerage, is_default=True).first()
         if not pipeline:
@@ -86,7 +86,7 @@ class DashboardView(RoleRequiredMixin, TemplateView):
         policies_by_lob = Policy.objects.filter(
             brokerage=brokerage, status='active'
         ).values('line_of_business__name').annotate(
-            count=Count('id'), total_premium=Sum('premium')
+            count=Count('id'), total_premium=Sum('total_premium')
         ).order_by('-count')
         ctx['policies_by_lob'] = list(policies_by_lob)
 
@@ -94,7 +94,7 @@ class DashboardView(RoleRequiredMixin, TemplateView):
             brokerage=brokerage,
             created_at__date__gte=period_start,
         ).annotate(month=TruncMonth('created_at')).values('month').annotate(
-            total=Sum('premium')
+            total=Sum('total_premium')
         ).order_by('month')
         ctx['monthly_premium'] = list(monthly_premium)
 
@@ -102,7 +102,7 @@ class DashboardView(RoleRequiredMixin, TemplateView):
             brokerage=brokerage,
             created_at__date__gte=period_start,
         ).annotate(month=TruncMonth('created_at')).values('month').annotate(
-            total=Sum('amount')
+            total=Sum('insurer_amount')
         ).order_by('month')
         ctx['monthly_commission'] = list(monthly_commission)
 
@@ -114,7 +114,7 @@ class DashboardView(RoleRequiredMixin, TemplateView):
         top_insurers = Policy.objects.filter(
             brokerage=brokerage, status='active'
         ).values('insurer__name').annotate(
-            count=Count('id'), total_premium=Sum('premium')
+            count=Count('id'), total_premium=Sum('total_premium')
         ).order_by('-total_premium')[:5]
         ctx['top_insurers'] = list(top_insurers)
 
