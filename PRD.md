@@ -582,6 +582,7 @@ O **tenant é a `Brokerage` (corretora)**. Um `User` pertence a exatamente uma `
 | `pypdf` | Manipulação/merge de PDFs |
 | `Pillow` | Validação/processamento de imagens anexadas |
 | `whitenoise` (opcional) | Servir estáticos no container app |
+| `Faker` `>= 30` | Geração de dados fake (locale `pt_BR`) para o comando `seed_demo` de demonstração (seção 46.1) |
 
 > **Nota sobre `dj-celery-panel`:** é o requisito de visualização de tasks no Admin. `django-celery-beat` e `django-celery-results` **complementam** (agendamento persistente e armazenamento de resultados) — não substituem. Todos convivem.
 
@@ -624,17 +625,16 @@ scsi/                              # raiz do repositório
 │   ├── base_auth.html
 │   ├── base_app.html              # layout interno (menu lateral)
 │   └── partials/
-└── core/                          # projeto Django (config)
-    ├── __init__.py                # carrega o app Celery
-    ├── settings.py                # ÚNICO settings, lê do .env
-    ├── urls.py                    # URL router raiz
-    ├── celery.py                  # instância Celery
-    ├── wsgi.py
-    └── asgi.py
-
-# Apps (cada uma em /apps ou na raiz — padrão escolhido: pasta apps/)
-apps/
-├── base/
+├── core/                          # projeto Django (config): settings, urls, celery, wsgi/asgi
+│   ├── __init__.py                # carrega o app Celery
+│   ├── settings.py                # ÚNICO settings, lê do .env
+│   ├── urls.py                    # URL router raiz
+│   ├── celery.py                  # instância Celery
+│   ├── wsgi.py
+│   └── asgi.py
+│
+│   # === Apps Django na RAIZ do projeto (irmãs de core/, SEM pasta apps/) ===
+├── base/                          # app base: BaseModel, TenantAwareModel, mixins, middleware, utils
 ├── accounts/
 ├── tenants/
 ├── clients/
@@ -651,10 +651,12 @@ apps/
 └── dashboard/
 ```
 
+> **Apps na raiz:** as apps de domínio ficam **diretamente na raiz** do projeto (irmãs de `core/`), **sem** pasta `apps/`. No `INSTALLED_APPS` são referenciadas pelo nome simples (ex.: `'base'`, `'accounts'`, `'insurance'`). A app **`base`** concentra `BaseModel`/`TenantAwareModel`/mixins/middleware/utils; **`core`** é o pacote de configuração do projeto (settings, urls, celery, wsgi/asgi).
+
 **Padrão interno de cada app:**
 
 ```
-apps/<app>/
+<app>/                     # ex.: accounts/, insurance/, crm/ — na raiz do projeto
 ├── __init__.py
 ├── apps.py                # AppConfig; importa signals no ready()
 ├── admin.py
@@ -2484,6 +2486,102 @@ docker volume ls | grep scsi
 - **Performance:** `select_related`/`prefetch_related` nas listas e detalhes; paginação; agregações via `annotate`/`aggregate` no dashboard.
 - **Conexões:** considerar `CONN_MAX_AGE` e, em escala, **PgBouncer** (futuro).
 
+### 46.1 Carga Inicial de Dados de Demonstração — Comando `seed_demo`
+
+#### F31 — Comando de Carga de Dados Fake para Demonstração
+
+- **Estado atual:** não existe. Nenhum comando de seed/fixtures no projeto.
+- **Descrição:** management command `python manage.py seed_demo` que popula a base com dados fictícios realistas — corretora(s), usuários e registros em **todas as tabelas possíveis** — com **datas variadas** (passado, presente e futuro), cobrindo **múltiplos cenários** para demonstrações do sistema.
+- **Valor para o usuário:** permite a Renata (admin) e ao time comercial **demonstrar o SCSI** com um ambiente cheio e crível (dashboard com gráficos populados, CRM com cards em todas as etapas, renovações a vencer, sinistros em andamento, comissões a repassar) sem cadastrar nada manualmente. Acelera vendas, onboarding e QA visual.
+
+**Regras de negócio:**
+- Cria por padrão **2 corretoras** (tenants) com dados independentes — comprova visualmente o **isolamento multi tenant**.
+- Cada corretora recebe: plano/assinatura, usuários em **todos os roles** (owner/manager/broker/agent/producer/operational) e registros em todas as entidades de domínio.
+- Datas distribuídas: `created_at`/`updated_at` espalhados nos últimos ~24 meses; datas de negócio (vigências, vencimentos, ocorrências, referências de comissão) cobrindo passado/presente/futuro.
+- Cobre **todos os estados/tipos** de cada entidade (ver "Cenários cobertos").
+- **Seguro por padrão:** aborta se `settings.DEBUG is False`, exceto com `--force` explícito (evita destruir base de produção).
+- **Reprodutível:** seed fixa (`--seed`, default `42`) para `Faker` e `random`.
+- **Resumos de IA** preenchidos com **texto canônico fake** — o comando **não** chama a OpenAI (offline, gratuito, determinístico).
+- Tudo em **transação atômica**; usa `bulk_create` onde possível.
+
+**Cenários cobertos (diversidade obrigatória):**
+| Entidade | Cenários |
+|---|---|
+| `Client` | PF e PJ; com e sem anexos; com e sem `ai_summary` |
+| `Insurer` / `LineOfBusiness` | catálogo variado por corretora |
+| `Proposal` | todos os status (`draft`→`converted`), com 1..N itens cobertos |
+| `Policy` | `active`, `expired`, `canceled`, `renewed`; vigências passadas/atuais/futuras |
+| `CoveredItem` | todos os `item_type` (auto/property/fleet/travel/life/equipment/other) com `attributes`/`coverages` coerentes |
+| `Claim` | todos os status (`opened`→`closed`); datas de ocorrência variadas |
+| `Endorsement` | todos os tipos (increase/decrease/cancellation/data_change) |
+| `Renewal` | `pending` (a vencer 30/60/90d), vencidas, `renewed`, `lost` |
+| `Agent` / `Producer` | pessoa e empresa; produtor sob agente e direto à corretora |
+| `Commission` / `CommissionSplit` | status `pending`/`received`/`paid`; repasses a agentes e produtores |
+| CRM (`Deal`) | cards em todas as etapas; `open`/`won`/`lost`; com `DealStageHistory` |
+| `Notification` | lidas e não lidas |
+| `ChatSession` / `ChatMessage` | sessões com histórico user/assistant |
+| `Document` | metadados (+ arquivos placeholder se `--with-files`) |
+
+**Modelagem proposta:** **nenhuma alteração de schema.** O comando apenas **escreve** nas models existentes (seções 13–14). Observação técnica: como `created_at` usa `auto_now_add=True`, para obter datas históricas o comando **sobrescreve** `created_at`/`updated_at` após a criação via `Model.objects.filter(pk=...).update(created_at=...)`.
+
+**Impactos técnicos:**
+- **Backend:** novo comando `base/management/commands/seed_demo.py` (na app compartilhada `base`); helpers simples de geração por app (funções, **não** `factory_boy`). Dependência nova: `Faker` (locale `pt_BR`).
+- **Frontend:** nenhum (saída no terminal com progresso e contagens finais por corretora).
+- **Banco:** nenhuma migração; respeita FK `brokerage` em cada registro; usa índices já existentes.
+- **Jobs/Integrações:** nenhuma chamada à OpenAI/Celery; resumos são texto fake.
+- **Permissões:** comando de CLI (operador/dev); não exposto via web; sem rotas novas.
+
+**Flags da CLI:**
+| Flag | Default | Função |
+|---|---|---|
+| `--brokerages N` | `2` | nº de corretoras a criar |
+| `--flush` | `False` | limpa dados de demonstração antes de criar |
+| `--seed N` | `42` | seed determinística (Faker/random) |
+| `--with-files` | `False` | gera arquivos placeholder para `Document` |
+| `--force` | `False` | permite rodar com `DEBUG=False` (produção) |
+
+**Fluxo do comando:**
+
+```mermaid
+flowchart TD
+    A([manage.py seed_demo]) --> B{DEBUG=True ou --force?}
+    B -->|Não| C[Aborta com aviso de segurança]
+    B -->|Sim| D{--flush?}
+    D -->|Sim| E[Remove dados de demonstração existentes]
+    D -->|Não| F[Mantém base]
+    E --> G[Cria corretoras + planos + assinaturas]
+    F --> G
+    G --> H[Cria usuários em todos os roles por corretora]
+    H --> I[Cria catálogos: seguradoras e ramos]
+    I --> J[Cria parceiros: agentes e produtores]
+    J --> K[Cria clientes PF/PJ]
+    K --> L[Cria propostas + itens cobertos todos os tipos]
+    L --> M[Gera apólices + comissões + repasses]
+    M --> N["Cria sinistros, endossos, renovações"]
+    N --> O["Cria CRM: pipelines, etapas, deals, histórico"]
+    O --> P["Cria notificações, chats e ai_summary fake"]
+    P --> Q[Sobrescreve created_at e datas de negócio]
+    Q --> R([Resumo final: contagens por corretora])
+```
+
+**Critérios de Aceite:**
+- [ ] `python manage.py seed_demo` popula 2 corretoras com dados em **todas** as entidades de domínio.
+- [ ] Cada registro tem `brokerage` correto (isolamento preservado entre as 2 corretoras).
+- [ ] `created_at` e datas de negócio são **variados** (passado/presente/futuro), não todos "hoje".
+- [ ] Todos os status/tipos/cenários da tabela acima aparecem ao menos uma vez.
+- [ ] Dashboard, CRM (Kanban), renovações, comissões e sinistros exibem dados ricos após o seed.
+- [ ] Comando aborta com `DEBUG=False` sem `--force`.
+- [ ] Reexecução com `--flush` recria sem duplicar; mesma `--seed` gera o mesmo conjunto.
+- [ ] Nenhuma chamada à OpenAI (resumos são texto fake).
+- [ ] Uso documentado em `docs/local-dev.md`.
+
+**Decisões resolvendo ambiguidades:**
+- "Em todas as tabelas possíveis" → cobre todas as models de domínio tenant-aware + catálogos; **não** cria superuser/staff global (apenas usuários do tenant).
+- Biblioteca → **`Faker` (pt_BR)** + `random` com seed fixa (não `factory_boy`, para não acoplar a framework de testes, que está fora de escopo — seção 40).
+- `created_at` histórico → sobrescrito via `.update()` pós-criação (contorna `auto_now_add`).
+- Resumos de IA → texto canônico fake (offline) para não gastar tokens nem exigir chave em demo.
+- Segurança → guard em `DEBUG`/`--force` para nunca destruir produção por engano (ver risco R13).
+
 ---
 
 ## 47. Estratégia de Backup
@@ -2534,6 +2632,7 @@ docker volume ls | grep scsi
 | R10 | **Ausência do Design System no início** | Médio | Bloquear sprints de frontend definitivo até `design-system.html` existir; usar tokens assim que disponível. |
 | R11 | **Deploy/SSL no Cloudflare** | Médio | DNS-only na 1ª emissão Let's Encrypt; Cloudflare Full (strict) depois; logs do Traefik para diagnóstico. |
 | R12 | **Cálculo incorreto de comissões/repasses** | Alto | Serviços isolados e validados (soma de repasses ≤ comissão); relatórios de conferência. |
+| R13 | **Comando `seed_demo` popular/apagar base de produção por engano** | Alto | Aborta se `DEBUG=False` (exige `--force` explícito); `--flush` só remove dados de demonstração; documentado no runbook. |
 
 ---
 
@@ -2627,6 +2726,14 @@ docker volume ls | grep scsi
 | **Justificativa** | Menor custo operacional que Kubernetes para time pequeno; rolling updates nativos |
 | **Trade-off** | Menos recursos avançados que K8s; adequado ao porte atual. |
 
+### 50.12 Seed de Demonstração — `Faker` + Guard de Produção
+
+| Aspecto | Decisão |
+|---|---|
+| **Escolha** | Comando `seed_demo` com `Faker` (pt_BR) + seed fixa; resumos de IA fake (offline); guard que aborta com `DEBUG=False` salvo `--force` |
+| **Justificativa** | Demos/QA precisam de base rica e reprodutível sem custo de IA nem cadastro manual; `Faker` é leve e não acopla a framework de testes (fora de escopo) |
+| **Trade-off** | Dados fake não refletem distribuições reais; o guard exige `--force` consciente para popular ambientes não-DEBUG. Sobrescrever `created_at` via `.update()` é necessário por causa de `auto_now_add`. |
+
 ---
 
 ## 51. Critérios de Aceite
@@ -2653,6 +2760,7 @@ Critérios globais que validam a entrega do sistema (cada feature tem os seus, s
 - [ ] UI 100% pt-BR, responsiva, aderente ao Design System, timezone `America/Sao_Paulo`.
 - [ ] Documentação MKDocs (com Mermaid) publicada.
 - [ ] Deploy reproduzível em VPS Ubuntu com Docker Swarm + Traefik (TLS ativo).
+- [ ] Comando `seed_demo` popula um ambiente de demonstração diverso (multi cenário, datas variadas, 2 corretoras isoladas).
 
 ---
 
@@ -2667,7 +2775,7 @@ Visão em fases (cada fase agrupa sprints da seção 53):
 | **Fase 3 — Operação de Seguros** | 14–17 | Sinistros, endossos, agentes/produtores, comissões | Ciclo operacional completo + financeiro de comissões |
 | **Fase 4 — Vendas e Assíncrono** | 18–20 | CRM, Celery/Beat/Notificações, renovações | Funil de vendas + automações e alertas |
 | **Fase 5 — Inteligência e Análise** | 21–24 | Resumos IA, chat IA, dashboard, relatórios | IA integrada + visão analítica e exportações |
-| **Fase 6 — Lançamento** | 25–28 | Landing, MKDocs, deploy Swarm, ajustes finais | Produto público, documentado, em produção |
+| **Fase 6 — Lançamento** | 25–29 | Landing, MKDocs, deploy Swarm, ajustes finais, **seed de demonstração** | Produto público, documentado, em produção, com base de demo |
 
 ```mermaid
 flowchart LR
@@ -2970,6 +3078,25 @@ flowchart LR
 
 **Entrega:** sistema estável, seguro, responsivo e pronto para uso real.
 
+### Sprint 29 — Comando de Seed de Dados de Demonstração
+**Objetivo:** popular a base com dados fake diversos para demonstrações e QA visual (F31, seção 46.1). Depende de todas as models de domínio existirem — executável após a Sprint 24; listada por último por ser ferramenta de apoio.
+- [ ] Adicionar `Faker` (locale `pt_BR`) ao `requirements.txt`
+- [ ] Criar `base/management/commands/seed_demo.py` com flags `--brokerages/--flush/--seed/--with-files/--force`
+- [ ] Guard de segurança: abortar se `DEBUG=False` sem `--force`
+- [ ] Criar N corretoras + planos/assinaturas + usuários em todos os roles
+- [ ] Seed de catálogos: seguradoras e ramos por corretora
+- [ ] Seed de parceiros: agentes e produtores (pessoa/empresa; produtor sob agente e direto)
+- [ ] Seed de clientes PF/PJ com `created_at` variados
+- [ ] Seed de propostas (todos os status) + itens cobertos (todos os tipos)
+- [ ] Seed de apólices (active/expired/canceled/renewed) com vigências variadas + comissões + repasses
+- [ ] Seed de sinistros (todos os status), endossos (todos os tipos) e renovações (a vencer/vencidas/renovadas/perdidas)
+- [ ] Seed de CRM: pipelines/etapas + deals em todas as etapas (open/won/lost) + `DealStageHistory`
+- [ ] Seed de notificações (lidas/não lidas), sessões/mensagens de chat e `ai_summary` fake (sem chamar OpenAI)
+- [ ] Sobrescrever `created_at` e datas de negócio cobrindo passado/presente/futuro; envolver em transação + `bulk_create`
+- [ ] Documentar uso em `docs/local-dev.md`
+
+**Entrega:** `python manage.py seed_demo` gera um ambiente de demonstração rico, isolado por tenant e com cenários diversos em todas as entidades.
+
 ---
 
 ## 54. Considerações Finais
@@ -2991,7 +3118,7 @@ O SCSI é um SaaS multi tenant para corretoras de seguros cuja **espinha dorsal 
 1. Garantir o Design System em `design_system/design-system.html`.
 2. Criar o start template do projeto (venv + `django-admin startproject` + apps base) — Sprint 1.
 3. Executar a Sprint 1 com o prompt padrão referenciando `@PRD.md` e `@design_system/design-system.html`.
-4. Revisar, corrigir e seguir sequencialmente até a Sprint 28.
+4. Revisar, corrigir e seguir sequencialmente até a Sprint 28 (a Sprint 29, de dados de demonstração, pode ser executada a partir da Sprint 24 sempre que quiser popular o ambiente para demos).
 
 > Este documento cresce, nunca diminui: novas features viram novas subseções na seção de funcionalidades e novas sprints na seção 53, com a versão do cabeçalho incrementada.
 
