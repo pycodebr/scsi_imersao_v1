@@ -4,6 +4,7 @@ from .views import (
     GeneratePolicyFromProposalView,
     PolicyCreateView,
     PolicyDetailView,
+    PolicyItemsJsonView,
     PolicyListView,
     PolicyUpdateView,
     ProposalCreateView,
@@ -24,4 +25,5 @@ urlpatterns = [
     path('apolices/create/', PolicyCreateView.as_view(), name='policy_create'),
     path('apolices/<int:pk>/', PolicyDetailView.as_view(), name='policy_detail'),
     path('apolices/<int:pk>/edit/', PolicyUpdateView.as_view(), name='policy_update'),
+    path('apolices/<int:pk>/items-json/', PolicyItemsJsonView.as_view(), name='policy_items_json'),
 ]

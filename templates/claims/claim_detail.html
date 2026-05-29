@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Sinistro {{ claim.claim_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 nxl-page-title">Sinistro {{ claim.claim_number }}</h1>
+        <div>
+            <a href="{% url 'claims:claim_update' claim.pk %}" class="btn btn-outline-primary">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            <a href="{% url 'claims:claim_list' %}" class="btn btn-outline-secondary ms-2">
+                Voltar
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-3">Dados do Sinistro</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <small class="text-muted d-block">Nº Sinistro</small>
+                            <strong>{{ claim.claim_number }}</strong>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <small class="text-muted d-block">Apólice</small>
+                            <a href="{{ claim.policy.get_absolute_url }}">{{ claim.policy.policy_number }}</a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <small class="text-muted d-block">Item Coberto</small>
+                            {{ claim.covered_item.description }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <small class="text-muted d-block">Data Ocorrência</small>
+                            {{ claim.occurrence_date|date:"d/m/Y" }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <small class="text-muted d-block">Data Aviso</small>
+                            {{ claim.notice_date|date:"d/m/Y" }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <small class="text-muted d-block">Valor Reclamado</small>
+                            R$ {{ claim.claimed_amount|floatformat:2 }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <small class="text-muted d-block">Valor Aprovado</small>
+                            R$ {{ claim.approved_amount|floatformat:2 }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <small class="text-muted d-block">Status</small>
+                            <span class="badge {{ claim.status|slugify }}">{{ claim.get_status_display }}</span>
+                        </div>
+                    </div>
+                    {% if claim.description %}
+                    <hr>
+                    <h6>Descrição</h6>
+                    <p>{{ claim.description }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            {% include "partials/_document_attachments.html" with object=claim %}
+        </div>
+    </div>
+</div>
+{% endblock %}

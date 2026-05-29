@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView, UpdateView, View
@@ -237,3 +238,14 @@ class PolicyDetailView(RoleRequiredMixin, TenantQuerysetMixin, DetailView):
         ).order_by('-created_at')
         ctx['active_tab'] = self.request.GET.get('tab', 'info')
         return ctx
+
+
+class PolicyItemsJsonView(TenantQuerysetMixin, View):
+    def get(self, request, pk):
+        policy = get_object_or_404(Policy, pk=pk, brokerage=request.tenant)
+        items = policy.items.all().values('id', 'description', 'identifier')
+        data = [
+            {'id': item['id'], 'text': f"{item['description']} ({item['identifier']})" if item['identifier'] else item['description']}
+            for item in items
+        ]
+        return JsonResponse({'items': data})
