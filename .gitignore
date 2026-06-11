@@ -173,4 +173,5 @@ cython_debug/
 
 # End of https://www.toptal.com/developers/gitignore/api/django
 .claude
-.DS_Storesite/
+.DS_Store
+site/
